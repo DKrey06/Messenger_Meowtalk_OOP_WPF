@@ -31,18 +31,20 @@
                        FontSize="{StaticResource FontSizeXLarge}"
                        FontWeight="SemiBold"
                        Foreground="{StaticResource TextPrimaryBrush}"
-                       Margin="0,0,0,30"/>
+                       Margin="0,0,0,30"
+                       HorizontalAlignment="Center"/>
 
             <TextBlock Text="Введите имя пользователя" 
                        FontSize="{StaticResource FontSizeNormal}"
                        Foreground="{StaticResource TextSecondaryBrush}"
                        Margin="0,0,0,5"/>
 
+            <!--Поле ввода-->
             <TextBox x:Name="UsernameTextBox" 
                      Height="40" 
                      FontSize="{StaticResource FontSizeMedium}"
                      Padding="10"
-                     Background="{StaticResource SurfaceBrush}"
+                     Background="White"
                      BorderBrush="{StaticResource PrimaryBrush}"
                      BorderThickness="1"/>
 
@@ -54,7 +56,7 @@
         </StackPanel>
 
         <!--Нижняя панелька-->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="20">
+        <Border Grid.Row="2" Background="White" Padding="20">
             <TextBlock Text="Простой и удобный мессенджер для общения" 
                        FontSize="{StaticResource FontSizeSmall}"
                        Foreground="{StaticResource TextSecondaryBrush}"

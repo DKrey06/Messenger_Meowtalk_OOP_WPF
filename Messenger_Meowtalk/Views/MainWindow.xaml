@@ -22,7 +22,7 @@
             </Grid.RowDefinitions>
 
             <!--Верхняя панелька с лого-->
-            <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" Padding="15">
+            <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" Padding="20">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Image Source="/Assets/Images/logo.png" 
                            Height="30" Width="30" 
@@ -57,7 +57,7 @@
             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <!--Тестовые чаты, чисто для вида-->
-                    <!--Чат 1-->
+                    <!--Чат 1 - Марина-->
                     <Border Padding="15,10" BorderBrush="LightGray" BorderThickness="0,0,0,1" Cursor="Hand">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -88,7 +88,7 @@
                         </Grid>
                     </Border>
 
-                    <!--Чат 2-->
+                    <!--Чат 2 - Иван-->
                     <Border Padding="15,10" BorderBrush="LightGray" BorderThickness="0,0,0,1" Cursor="Hand">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -119,7 +119,7 @@
                         </Grid>
                     </Border>
 
-                    <!--Чат 3-->
+                    <!--Чат 3 - Алексей-->
                     <Border Padding="15,10" BorderBrush="LightGray" BorderThickness="0,0,0,1" Cursor="Hand">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -153,7 +153,7 @@
             </ScrollViewer>
 
             <!--Нижняя панелька с текущим пользователем-->
-            <Border Grid.Row="3" Background="{StaticResource PrimaryDarkBrush}" Padding="10">
+            <Border Grid.Row="3" Background="{StaticResource PrimaryBrush}" Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -163,43 +163,43 @@
 
                     <!--Аватар текущего пользователя-->
                     <Image Grid.Column="0" 
-               Source="/Assets/Images/default-avatar.png" 
-               Height="40" Width="40" 
-               Margin="0,0,10,0"/>
+                           Source="/Assets/Images/default-avatar.png" 
+                           Height="40" Width="40" 
+                           Margin="0,0,10,0"/>
 
                     <!--Информация о пользователе (Антон :) )-->
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock Text="Антон" 
-                       Foreground="White" 
-                       FontWeight="SemiBold"
-                       FontSize="{StaticResource FontSizeNormal}"/>
+                                   Foreground="White" 
+                                   FontWeight="SemiBold"
+                                   FontSize="{StaticResource FontSizeNormal}"/>
                         <TextBlock Text="#1234" 
-                       Foreground="LightGray"
-                       FontSize="{StaticResource FontSizeSmall}"/>
+                                   Foreground="LightGray"
+                                   FontSize="{StaticResource FontSizeSmall}"/>
                     </StackPanel>
 
                     <!--Кнопки нового чата и настроек-->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button Content="➕" 
-                    Background="Transparent" 
-                    BorderThickness="0"
-                    Foreground="White"
-                    FontSize="{StaticResource FontSizeMedium}"
-                    Cursor="Hand"
-                    ToolTip="Начать новый чат"
-                    Width="30" Height="30"
-                    Click="NewChatButton_Click"/>
+                                Background="Transparent" 
+                                BorderThickness="0"
+                                Foreground="White"
+                                FontSize="{StaticResource FontSizeMedium}"
+                                Cursor="Hand"
+                                ToolTip="Начать новый чат"
+                                Width="30" Height="30"
+                                Click="NewChatButton_Click"/>
 
                         <Button Content="⚙️" 
-                    Background="Transparent" 
-                    BorderThickness="0"
-                    Foreground="White"
-                    FontSize="{StaticResource FontSizeSmall}"
-                    Cursor="Hand"
-                    ToolTip="Настройки пользователя"
-                    Width="30" Height="30"
-                    Margin="5,0,0,0"
-                    Click="SettingsButton_Click"/>
+                                Background="Transparent" 
+                                BorderThickness="0"
+                                Foreground="White"
+                                FontSize="{StaticResource FontSizeSmall}"
+                                Cursor="Hand"
+                                ToolTip="Настройки пользователя"
+                                Width="30" Height="30"
+                                Margin="5,0,0,0"
+                                Click="SettingsButton_Click"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -214,7 +214,7 @@
             </Grid.RowDefinitions>
 
             <!--Заголовок тестового чата-->
-            <Border Grid.Row="0" Background="White" Padding="15" BorderBrush="LightGray" BorderThickness="0,0,0,1">
+            <Border Grid.Row="0" Background="{StaticResource AccentBrush}" Padding="15" BorderBrush="LightGray" BorderThickness="0,0,0,1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -228,10 +228,11 @@
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="Марина" 
                                        FontWeight="SemiBold"
-                                       FontSize="{StaticResource FontSizeMedium}"/>
+                                       FontSize="{StaticResource FontSizeMedium}"
+                                       Foreground="White"/>
                             <TextBlock Text="в сети" 
                                        FontSize="{StaticResource FontSizeSmall}"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="LightGray"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -242,7 +243,8 @@
                                 BorderThickness="0"
                                 Cursor="Hand"
                                 ToolTip="Информация о чате"
-                                FontSize="{StaticResource FontSizeMedium}"/>
+                                FontSize="{StaticResource FontSizeMedium}"
+                                Foreground="White"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -253,81 +255,81 @@
                     <StackPanel Margin="10">
                         <!--Сообщение от Марины-->
                         <Border Margin="0,5" 
-                    Padding="15,10" 
-                    Background="White"
-                    CornerRadius="10"
-                    HorizontalAlignment="Left"
-                    MaxWidth="400">
+                                Padding="15,10" 
+                                Background="{StaticResource OtherMessageBrush}"
+                                CornerRadius="10"
+                                HorizontalAlignment="Left"
+                                MaxWidth="400">
                             <StackPanel>
                                 <TextBlock Text="Привет! Как дела?" 
-                               FontSize="{StaticResource FontSizeNormal}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               TextWrapping="Wrap"/>
+                                           FontSize="{StaticResource FontSizeNormal}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap"/>
                                 <TextBlock Text="12:25" 
-                               FontSize="{StaticResource FontSizeSmall}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               HorizontalAlignment="Right"
-                               Margin="0,5,0,0"/>
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Right"
+                                           Margin="0,5,0,0"/>
                             </StackPanel>
                         </Border>
 
                         <!--Сообщение Антон-->
                         <Border Margin="0,5" 
-                    Padding="15,10" 
-                    Background="{StaticResource PrimaryBrush}"
-                    CornerRadius="10"
-                    HorizontalAlignment="Right"
-                    MaxWidth="400">
+                                Padding="15,10" 
+                                Background="{StaticResource MyMessageBrush}"
+                                CornerRadius="10"
+                                HorizontalAlignment="Right"
+                                MaxWidth="400">
                             <StackPanel>
                                 <TextBlock Text="Привет! Все отлично, спасибо! Как твои успехи?" 
-                               FontSize="{StaticResource FontSizeNormal}"
-                               Foreground="White"
-                               TextWrapping="Wrap"/>
+                                           FontSize="{StaticResource FontSizeNormal}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap"/>
                                 <TextBlock Text="12:26" 
-                               FontSize="{StaticResource FontSizeSmall}"
-                               Foreground="LightGray"
-                               HorizontalAlignment="Right"
-                               Margin="0,5,0,0"/>
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Right"
+                                           Margin="0,5,0,0"/>
                             </StackPanel>
                         </Border>
 
                         <!--Ответ Марины-->
                         <Border Margin="0,5" 
-                    Padding="15,10" 
-                    Background="White"
-                    CornerRadius="10"
-                    HorizontalAlignment="Left"
-                    MaxWidth="400">
+                                Padding="15,10" 
+                                Background="{StaticResource OtherMessageBrush}"
+                                CornerRadius="10"
+                                HorizontalAlignment="Left"
+                                MaxWidth="400">
                             <StackPanel>
                                 <TextBlock Text="Тоже все хорошо! Ты видел новый проект?" 
-                               FontSize="{StaticResource FontSizeNormal}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               TextWrapping="Wrap"/>
+                                           FontSize="{StaticResource FontSizeNormal}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap"/>
                                 <TextBlock Text="12:27" 
-                               FontSize="{StaticResource FontSizeSmall}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               HorizontalAlignment="Right"
-                               Margin="0,5,0,0"/>
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Right"
+                                           Margin="0,5,0,0"/>
                             </StackPanel>
                         </Border>
 
                         <!--Еще сообщение Марины-->
                         <Border Margin="0,5" 
-                    Padding="15,10" 
-                    Background="White"
-                    CornerRadius="10"
-                    HorizontalAlignment="Left"
-                    MaxWidth="400">
+                                Padding="15,10" 
+                                Background="{StaticResource OtherMessageBrush}"
+                                CornerRadius="10"
+                                HorizontalAlignment="Left"
+                                MaxWidth="400">
                             <StackPanel>
                                 <TextBlock Text="Завтра покажу тебе демо версию!" 
-                               FontSize="{StaticResource FontSizeNormal}"
-                               Foreground="{StaticResource TextPrimaryBrush}"
-                               TextWrapping="Wrap"/>
+                                           FontSize="{StaticResource FontSizeNormal}"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextWrapping="Wrap"/>
                                 <TextBlock Text="12:28" 
-                               FontSize="{StaticResource FontSizeSmall}"
-                               Foreground="{StaticResource TextSecondaryBrush}"
-                               HorizontalAlignment="Right"
-                               Margin="0,5,0,0"/>
+                                           FontSize="{StaticResource FontSizeSmall}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Right"
+                                           Margin="0,5,0,0"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -335,7 +337,7 @@
             </Border>
 
             <!--Панелька для ввода сообщения-->
-            <Border Grid.Row="2" Background="White" Padding="15">
+            <Border Grid.Row="2" Background="{StaticResource AccentBrush}" Padding="15">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -357,7 +359,7 @@
                              Margin="10,0"
                              Padding="15,0"
                              FontSize="{StaticResource FontSizeNormal}"
-                             Background="{StaticResource SurfaceBrush}"
+                             Background="White"
                              BorderBrush="LightGray"
                              BorderThickness="1"
                              VerticalContentAlignment="Center"
