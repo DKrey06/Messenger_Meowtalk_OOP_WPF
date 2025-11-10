@@ -55,6 +55,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\Chat.cs" />
     <Compile Include="Models\Massage.cs" />
     <Compile Include="Models\User.cs" />
     <Compile Include="Services\Interfaces\IAuthService.cs" />
@@ -129,6 +130,13 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\Images\default-avatar.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Images\Avatar1.jpg" />
+    <Resource Include="Assets\Images\Avatar2.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Images\Avatar3.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
