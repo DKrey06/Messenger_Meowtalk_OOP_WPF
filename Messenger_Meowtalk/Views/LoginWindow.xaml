@@ -1,12 +1,66 @@
 ﻿<Window x:Class="Messenger_Meowtalk.Views.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Messenger_Meowtalk.Views"
-        mc:Ignorable="d"
-        Title="LoginWindow" Height="450" Width="800">
+        Title="MeowTalk - Вход" 
+        Height="500" Width="400"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="{StaticResource BackgroundBrush}">
+
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!--Лого с котиком-->
+        <StackPanel Grid.Row="0" Margin="40" HorizontalAlignment="Center">
+            <Image Source="/Assets/Images/logo.png" Height="80" Width="80"/>
+            <TextBlock Text="MeowTalk" 
+                       FontSize="{StaticResource FontSizeXXLarge}" 
+                       FontWeight="Bold"
+                       Foreground="{StaticResource PrimaryBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,10,0,0"/>
+        </StackPanel>
+
+        <!--Форма для входа-->
+        <StackPanel Grid.Row="1" Margin="40,0" VerticalAlignment="Center">
+            <TextBlock Text="Войти в MeowTalk" 
+                       FontSize="{StaticResource FontSizeXLarge}"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       Margin="0,0,0,30"
+                       HorizontalAlignment="Center"/>
+
+            <TextBlock Text="Введите имя пользователя" 
+                       FontSize="{StaticResource FontSizeNormal}"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Margin="0,0,0,5"/>
+
+            <!--Поле ввода-->
+            <TextBox x:Name="UsernameTextBox" 
+                     Height="40" 
+                     FontSize="{StaticResource FontSizeMedium}"
+                     Padding="10"
+                     Background="White"
+                     BorderBrush="{StaticResource PrimaryBrush}"
+                     BorderThickness="1"/>
+
+            <Button Content="Войти" 
+                    Height="45" 
+                    Margin="0,20,0,0"
+                    Style="{StaticResource PrimaryButton}"
+                    Click="LoginButton_Click"/>
+        </StackPanel>
+
+        <!--Нижняя панелька-->
+        <Border Grid.Row="2" Background="White" Padding="20">
+            <TextBlock Text="Простой и удобный мессенджер для общения" 
+                       FontSize="{StaticResource FontSizeSmall}"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center"/>
+        </Border>
     </Grid>
 </Window>
