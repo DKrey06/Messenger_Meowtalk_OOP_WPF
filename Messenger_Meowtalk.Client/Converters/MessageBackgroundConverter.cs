@@ -10,10 +10,8 @@ public class MessageBackgroundConverter : IValueConverter
     {
         if (value is bool isMyMessage && isMyMessage)
         {
-            // Цвет своих сообщений (Антон) - #FFE6E5
             return new SolidColorBrush(Color.FromRgb(255, 230, 229));
         }
-        // Цвет чужих сообщений (Марина) - #E1C1D1
         return new SolidColorBrush(Color.FromRgb(225, 193, 209));
     }
 

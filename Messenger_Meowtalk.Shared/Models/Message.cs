@@ -22,8 +22,6 @@ namespace Messenger_Meowtalk.Shared.Models
 
         [JsonPropertyName("type")]
         public MessageType Type { get; set; } = MessageType.Text;
-
-        // Добавляем свойства для привязки
         public bool IsMyMessage { get; set; }
         public bool ShowSender { get; set; } = true;
 

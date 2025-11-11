@@ -21,13 +21,11 @@ namespace Messenger_Meowtalk.Client.Services
             {
                 _webSocket = new ClientWebSocket();
 
-                // Добавляем таймаут подключения
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
                 await _webSocket.ConnectAsync(new Uri(_serverUrl), cts.Token);
                 ConnectionStatusChanged?.Invoke("✅ Подключено к серверу");
 
-                // Отправляем системное сообщение о подключении
                 var connectMessage = new Message
                 {
                     Sender = username,
@@ -36,7 +34,6 @@ namespace Messenger_Meowtalk.Client.Services
                 };
                 await SendMessageAsync(connectMessage);
 
-                // Запускаем прослушивание сообщений
                 _ = Task.Run(ReceiveMessages);
             }
             catch (Exception ex)

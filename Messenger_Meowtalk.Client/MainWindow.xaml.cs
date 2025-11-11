@@ -16,7 +16,6 @@ namespace Messenger_Meowtalk.Client
             _viewModel = new MainViewModel(user);
             DataContext = _viewModel;
 
-            // Подписываемся на события для автоматической прокрутки
             _viewModel.MessageReceived += OnMessageReceived;
             _viewModel.ChatSelected += OnChatSelected;
 
@@ -27,8 +26,6 @@ namespace Messenger_Meowtalk.Client
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             MessageTextBox.Focus();
-
-            // Прокручиваем к нижней части при загрузке
             ScrollToBottom();
         }
 
@@ -36,7 +33,6 @@ namespace Messenger_Meowtalk.Client
         {
             _viewModel?.Cleanup();
 
-            // Отписываемся от событий
             if (_viewModel != null)
             {
                 _viewModel.MessageReceived -= OnMessageReceived;
@@ -89,13 +85,11 @@ namespace Messenger_Meowtalk.Client
             MessageTextBox.Focus();
         }
 
-        // Обработчик получения нового сообщения через WebSocket
         private void OnMessageReceived(object sender, System.EventArgs e)
         {
             ScrollToBottom();
         }
 
-        // Обработчик смены выбранного чата
         private void OnChatSelected(object sender, System.EventArgs e)
         {
             ScrollToBottom();
@@ -120,75 +114,9 @@ namespace Messenger_Meowtalk.Client
                 }));
         }
 
-        // Дополнительные методы для работы с WebSocket
-
-        // Обработчик двойного клика по чату для переименования
-        private void ChatItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is Border border && border.DataContext is Chat chat)
-            {
-                // Можно добавить функционал переименования чата
-                var newName = Microsoft.VisualBasic.Interaction.InputBox(
-                    "Введите новое имя для чата:",
-                    "Переименовать чат",
-                    chat.Name);
-
-                if (!string.IsNullOrWhiteSpace(newName))
-                {
-                    chat.Name = newName;
-                }
-            }
-        }
-
         public void FocusMessageTextBox()
         {
             MessageTextBox?.Focus();
-        }
-        // Обработчик контекстного меню для чатов
-        private void ChatItem_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-        {
-            if (sender is Border border && border.DataContext is Chat chat)
-            {
-                var contextMenu = new ContextMenu();
-
-                var renameItem = new MenuItem { Header = "Переименовать" };
-                renameItem.Click += (s, args) =>
-                {
-                    var newName = Microsoft.VisualBasic.Interaction.InputBox(
-                        "Введите новое имя для чата:",
-                        "Переименовать чат",
-                        chat.Name);
-
-                    if (!string.IsNullOrWhiteSpace(newName))
-                    {
-                        chat.Name = newName;
-                    }
-                };
-
-                var deleteItem = new MenuItem { Header = "Удалить чат" };
-                deleteItem.Click += (s, args) =>
-                {
-                    var result = MessageBox.Show(
-                        $"Вы уверены, что хотите удалить чат '{chat.Name}'?",
-                        "Подтверждение удаления",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Question);
-
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        _viewModel.Chats.Remove(chat);
-                        if (_viewModel.SelectedChat == chat)
-                        {
-                            _viewModel.SelectedChat = _viewModel.Chats.Count > 0 ? _viewModel.Chats[0] : null;
-                        }
-                    }
-                };
-
-                contextMenu.Items.Add(renameItem);
-                contextMenu.Items.Add(deleteItem);
-
-                border.ContextMenu = contextMenu;
-            }
-        }
+        }      
     }
 }
