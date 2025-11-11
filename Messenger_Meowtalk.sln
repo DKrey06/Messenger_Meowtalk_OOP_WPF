@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36623.8 d17.14
+VisualStudioVersion = 17.14.36623.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk", "Messenger_Meowtalk\Messenger_Meowtalk.csproj", "{B625388C-D5DB-4937-AF7D-0214E1C82EEB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Shared", "Messenger_Meowtalk.Shared\Messenger_Meowtalk.Shared.csproj", "{348B9EA2-A20F-4460-A5C0-40EF0376C59D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Server", "Messenger_Meowtalk.Server\Messenger_Meowtalk.Server.csproj", "{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Client", "Messenger_Meowtalk.Client\Messenger_Meowtalk.Client.csproj", "{B625388C-D5DB-4937-AF7D-0214E1C82EEB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,6 +15,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{348B9EA2-A20F-4460-A5C0-40EF0376C59D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{348B9EA2-A20F-4460-A5C0-40EF0376C59D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{348B9EA2-A20F-4460-A5C0-40EF0376C59D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{348B9EA2-A20F-4460-A5C0-40EF0376C59D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B625388C-D5DB-4937-AF7D-0214E1C82EEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B625388C-D5DB-4937-AF7D-0214E1C82EEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B625388C-D5DB-4937-AF7D-0214E1C82EEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
