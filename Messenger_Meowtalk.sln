@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Shared", "Messenger_Meowtalk.Shared\Messenger_Meowtalk.Shared.csproj", "{348B9EA2-A20F-4460-A5C0-40EF0376C59D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Server", "Messenger_Meowtalk.Server\Messenger_Meowtalk.Server.csproj", "{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{348B9EA2-A20F-4460-A5C0-40EF0376C59D} = {348B9EA2-A20F-4460-A5C0-40EF0376C59D}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Client", "Messenger_Meowtalk.Client\Messenger_Meowtalk.Client.csproj", "{B625388C-D5DB-4937-AF7D-0214E1C82EEB}"
 EndProject

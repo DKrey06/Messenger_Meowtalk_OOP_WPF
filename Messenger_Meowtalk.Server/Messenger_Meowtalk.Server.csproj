@@ -6,5 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
+    <ItemGroup>
+		<ProjectReference Include="..\Messenger_Meowtalk.Shared\Messenger_Meowtalk.Shared.csproj" />
+	</ItemGroup>
 </Project>
