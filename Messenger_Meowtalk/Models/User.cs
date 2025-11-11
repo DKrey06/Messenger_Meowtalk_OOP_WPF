@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace Messenger_Meowtalk.Models
 {
-    internal class User
+    public class User
     {
+        public string Username { get; set; } = "";
+        public string Status { get; set; } = "в сети";
     }
 }
