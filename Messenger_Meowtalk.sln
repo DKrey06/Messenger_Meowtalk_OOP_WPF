@@ -10,7 +10,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Server",
 		{348B9EA2-A20F-4460-A5C0-40EF0376C59D} = {348B9EA2-A20F-4460-A5C0-40EF0376C59D}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Client", "Messenger_Meowtalk.Client\Messenger_Meowtalk.Client.csproj", "{B625388C-D5DB-4937-AF7D-0214E1C82EEB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger_Meowtalk.Client", "Messenger_Meowtalk.Client\Messenger_Meowtalk.Client.csproj", "{09C44BBB-4789-4579-A4B7-DF03F1EAD3B4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5F9E400A-255F-4097-A9CB-EEED7BAFECE1} = {5F9E400A-255F-4097-A9CB-EEED7BAFECE1}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,10 +29,10 @@ Global
 		{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F9E400A-255F-4097-A9CB-EEED7BAFECE1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B625388C-D5DB-4937-AF7D-0214E1C82EEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B625388C-D5DB-4937-AF7D-0214E1C82EEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B625388C-D5DB-4937-AF7D-0214E1C82EEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B625388C-D5DB-4937-AF7D-0214E1C82EEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09C44BBB-4789-4579-A4B7-DF03F1EAD3B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09C44BBB-4789-4579-A4B7-DF03F1EAD3B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09C44BBB-4789-4579-A4B7-DF03F1EAD3B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09C44BBB-4789-4579-A4B7-DF03F1EAD3B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

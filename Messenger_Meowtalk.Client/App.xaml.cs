@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
-using Messenger_Meowtalk.Views;
+﻿using System.Windows;
 
-namespace Messenger_Meowtalk
+namespace Messenger_Meowtalk.Client
 {
     public partial class App : Application
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            // Просто создаем и показываем LoginWindow
             var loginWindow = new LoginWindow();
             loginWindow.Show();
         }

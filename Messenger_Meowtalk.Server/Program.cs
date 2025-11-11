@@ -6,38 +6,49 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Messenger_Meowtalk.Shared.Models; 
+using Messenger_Meowtalk.Shared.Models;
+
 namespace Messenger_MeowtalkServer
 {
     class Program
     {
         private static List<WebSocket> _clients = new List<WebSocket>();
         private static List<Message> _messageHistory = new List<Message>();
+        private static List<User> _connectedUsers = new List<User>();
 
         static async Task Main(string[] args)
         {
             var server = new HttpListener();
             server.Prefixes.Add("http://localhost:8080/");
-            server.Start();
-            Console.WriteLine("WebSocket сервер запущен на http://localhost:8080/");
 
-            while (true)
+            try
             {
-                var context = await server.GetContextAsync();
-                if (context.Request.IsWebSocketRequest)
-                {
-                    var webSocketContext = await context.AcceptWebSocketAsync(null);
-                    var webSocket = webSocketContext.WebSocket;
-                    _clients.Add(webSocket);
-                    Console.WriteLine($"Новое подключение. Всего клиентов: {_clients.Count}");
+                server.Start();
+                Console.WriteLine("✅ WebSocket сервер запущен на http://localhost:8080/");
+                Console.WriteLine("✅ Ожидание подключений...");
 
-                    _ = Task.Run(() => HandleClient(webSocket));
-                }
-                else
+                while (true)
                 {
-                    context.Response.StatusCode = 400;
-                    context.Response.Close();
+                    var context = await server.GetContextAsync();
+                    if (context.Request.IsWebSocketRequest)
+                    {
+                        var webSocketContext = await context.AcceptWebSocketAsync(null);
+                        var webSocket = webSocketContext.WebSocket;
+                        _clients.Add(webSocket);
+                        Console.WriteLine($"✅ Новое подключение. Всего клиентов: {_clients.Count}");
+
+                        _ = Task.Run(() => HandleClient(webSocket));
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = 400;
+                        context.Response.Close();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Ошибка сервера: {ex.Message}");
             }
         }
 
@@ -54,6 +65,7 @@ namespace Messenger_MeowtalkServer
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
                         var messageJson = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                        Console.WriteLine($"📨 Получено сообщение: {messageJson}");
 
                         var message = JsonSerializer.Deserialize<Message>(messageJson);
 
@@ -61,31 +73,36 @@ namespace Messenger_MeowtalkServer
                         {
                             if (message.Type == Message.MessageType.System)
                             {
-                                Console.WriteLine($"Системное сообщение: {message.Content}");
+                                Console.WriteLine($"🔧 Системное сообщение от {message.Sender}: {message.Content}");
                             }
                             else
                             {
-                                Console.WriteLine($"Получено сообщение от {message.Sender}: {message.Content}");
+                                Console.WriteLine($"💬 Сообщение от {message.Sender}: {message.Content}");
                             }
-                            _messageHistory.Add(message);
 
+                            _messageHistory.Add(message);
                             await BroadcastMessage(messageJson);
                         }
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
                         await webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "", CancellationToken.None);
+                        Console.WriteLine("🔌 Клиент отключился");
                     }
                 }
             }
+            catch (WebSocketException ex)
+            {
+                Console.WriteLine($"❌ WebSocket ошибка: {ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка: {ex.Message}");
+                Console.WriteLine($"❌ Общая ошибка: {ex.Message}");
             }
             finally
             {
                 _clients.Remove(webSocket);
-                Console.WriteLine($"Клиент отключен. Всего клиентов: {_clients.Count}");
+                Console.WriteLine($"📊 Клиент отключен. Всего клиентов: {_clients.Count}");
             }
         }
 
@@ -104,6 +121,7 @@ namespace Messenger_MeowtalkServer
             }
 
             await Task.WhenAll(tasks);
+            Console.WriteLine($"📤 Сообщение отправлено {tasks.Count} клиентам");
         }
     }
 }
