@@ -16,10 +16,13 @@ namespace Messenger_Meowtalk.Client.ViewModels
         private Chat _selectedChat;
         private string _messageText;
         private string _connectionStatus;
+        private bool _isEmojiPanelOpen;
         private readonly ChatService _chatService;
 
         public User CurrentUser { get; }
         public ObservableCollection<Chat> Chats { get; }
+        public ObservableCollection<EmojiItem> Emojis { get; } = new();
+        public ObservableCollection<EmojiItem> Stickers { get; } = new();
 
         // События для UI
         public event EventHandler MessageReceived;
@@ -60,11 +63,18 @@ namespace Messenger_Meowtalk.Client.ViewModels
             get => _connectionStatus;
             set => SetProperty(ref _connectionStatus, value);
         }
+        public bool IsEmojiPanelOpen
+        {
+            get => _isEmojiPanelOpen;
+            set => SetProperty(ref _isEmojiPanelOpen, value);
+        }
 
         public ICommand SendMessageCommand { get; }
         public ICommand StartNewChatCommand { get; }
         public ICommand OpenSettingsCommand { get; }
         public ICommand DisconnectCommand { get; }
+        public ICommand ToggleEmojiPanelCommand { get; }
+        public ICommand InsertEmojiCommand { get; }
 
         public MainViewModel(User currentUser)
         {
@@ -80,9 +90,13 @@ namespace Messenger_Meowtalk.Client.ViewModels
             StartNewChatCommand = new RelayCommand(StartNewChat);
             OpenSettingsCommand = new RelayCommand(OpenSettings);
             DisconnectCommand = new RelayCommand(async () => await DisconnectAsync());
-            _ = InitializeConnectionAsync();
+            ToggleEmojiPanelCommand = new RelayCommand(ToggleEmojiPanel);
+            InsertEmojiCommand = new RelayCommand<EmojiItem>(InsertEmoji);
 
+            _ = InitializeConnectionAsync();
             InitializeTestChats();
+            InitializeEmojis();
+            InitializeStickers();
         }
 
         private async Task InitializeConnectionAsync()
@@ -170,7 +184,87 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 MessageText = string.Empty;
                 await _chatService.SendMessageAsync(messageContent, SelectedChat.ChatId);    
         }
-     
+
+        private void ToggleEmojiPanel()
+        {
+            IsEmojiPanelOpen = !IsEmojiPanelOpen;
+        }
+
+        private void InsertEmoji(EmojiItem emoji)
+        {
+            if (emoji == null) return;
+
+            if (emoji.IsSticker)
+            {
+                // Для стикеров отправляем как специальное сообщение
+                _ = SendStickerAsync(emoji.Code);
+            }
+            else
+            {
+                // Для эмодзи добавляем в текстовое поле
+                MessageText += emoji.Code;
+
+                // Сохраняем фокус на текстовом поле после добавления эмодзи
+                MessageTextBox_Focus();
+
+                // Немного задерживаем вызов, чтобы WPF успел обновить UI
+                Task.Delay(50).ContinueWith(_ =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        // Устанавливаем курсор в конец текста
+                        var window = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault();
+                        window?.FocusMessageTextBoxAndSetCursorToEnd();
+                    });
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
+
+            // Закрываем панель после выбора
+            IsEmojiPanelOpen = false;
+        }
+
+        private async Task SendStickerAsync(string stickerCode)
+        {
+            if (SelectedChat == null) return;
+
+            // Отправляем стикер как текстовое сообщение с префиксом
+            await _chatService.SendMessageAsync($"[STICKER]{stickerCode}", SelectedChat.ChatId);
+
+            // Восстанавливаем фокус после отправки стикера
+            MessageTextBox_Focus();
+        }
+
+        private void InitializeEmojis()
+        {
+            // Популярные эмодзи
+            var popularEmojis = new[]
+            {
+                "😊", "😂", "🥰", "😍", "🤔", "😎", "🥺", "😭", "😡", "👍",
+                "❤️", "🔥", "✨", "🎉", "🙏", "💯", "🤝", "👏", "🐱", "🌟"
+            };
+            foreach (var emoji in popularEmojis)
+            {
+                Emojis.Add(new EmojiItem { Code = emoji, Description = "Эмодзи" });
+            }
+        }
+
+        private void InitializeStickers()
+        {
+            // Простые текстовые стикеры (можно заменить на картинки)
+            var stickers = new[]
+            {
+                "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "╰(▔∀▔)╯", "(～￣▽￣)～", "ヽ(•‿•)ノ",
+                "(´･ω･`)", "( ° ʖ °)", "¯\\_(ツ)_/¯", "(>^_^)>",
+                "<(^_^<)", "(¬‿¬)", "(づ￣ ³￣)づ", "ヾ(⌐■_■)ノ♪"
+            };
+
+            foreach (var sticker in stickers)
+            {
+                Stickers.Add(new EmojiItem { Code = sticker, Description = "Стикер", IsSticker = true });
+            }
+        }
+
+
 
         private void StartNewChat()
         {

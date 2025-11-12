@@ -79,10 +79,20 @@ namespace Messenger_Meowtalk.Client
             _viewModel.OpenSettingsCommand?.Execute(null);
         }
 
-        private void EmojiButton_Click(object sender, RoutedEventArgs e)
+        //private void EmojiButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    _viewModel.MessageText += "😊 ";
+        //    MessageTextBox.Focus();
+        //}
+        public void FocusMessageTextBoxAndSetCursorToEnd()
         {
-            _viewModel.MessageText += "😊 ";
-            MessageTextBox.Focus();
+            MessageTextBox?.Focus();
+
+            // Устанавливаем курсор в конец текста
+            if (MessageTextBox != null)
+            {
+                MessageTextBox.CaretIndex = MessageTextBox.Text.Length;
+            }
         }
 
         private void OnMessageReceived(object sender, System.EventArgs e)
