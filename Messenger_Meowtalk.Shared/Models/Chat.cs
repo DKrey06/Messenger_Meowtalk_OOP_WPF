@@ -2,8 +2,10 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 
 namespace Messenger_Meowtalk.Shared.Models
 {
@@ -11,8 +13,11 @@ namespace Messenger_Meowtalk.Shared.Models
     {
         private string _name = string.Empty;
 
+        [Key]
+        [JsonPropertyName("chatId")]
         public string ChatId { get; set; } = Guid.NewGuid().ToString();
 
+        [JsonPropertyName("name")]
         public string Name
         {
             get => _name;
@@ -26,7 +31,8 @@ namespace Messenger_Meowtalk.Shared.Models
             }
         }
 
-        public ObservableCollection<Message> Messages { get; set; } = new();
+        public virtual ObservableCollection<Message> Messages { get; set; } = new ObservableCollection<Message>();
+        public virtual ICollection<UserChat> UserChats { get; set; } = new List<UserChat>();
 
         public string LastMessage
         {

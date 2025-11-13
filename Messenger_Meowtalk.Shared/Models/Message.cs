@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
 
 namespace Messenger_Meowtalk.Shared.Models
 {
     public class Message
     {
+        [Key]
         [JsonPropertyName("id")]
         public string Id { get; set; } = Guid.NewGuid().ToString();
 
