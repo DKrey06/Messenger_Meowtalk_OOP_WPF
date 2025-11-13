@@ -11,7 +11,7 @@ namespace Messenger_Meowtalk.Client.Services
     public class WebSocketService
     {
         private ClientWebSocket _webSocket;
-        private readonly string _serverUrl = "ws://localhost:8080/";
+        private readonly string _serverUrl = "ws://10.11.203.103:8000/";
         public event Action<Message> MessageReceived;
         public event Action<string> ConnectionStatusChanged;
 
@@ -108,7 +108,6 @@ namespace Messenger_Meowtalk.Client.Services
             {
                 try
                 {
-                    // Отправляем системное сообщение об отключении
                     var disconnectMessage = new Message
                     {
                         Sender = username,

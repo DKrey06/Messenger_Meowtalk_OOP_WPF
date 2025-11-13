@@ -14,18 +14,28 @@ namespace Messenger_MeowtalkServer
     {
         private static List<WebSocket> _clients = new List<WebSocket>();
         private static List<Message> _messageHistory = new List<Message>();
-        private static List<User> _connectedUsers = new List<User>();
 
         static async Task Main(string[] args)
         {
+            // Получаем IP адрес в локальной сети
+            var localIP = GetLocalIPAddress();
+
             var server = new HttpListener();
-            server.Prefixes.Add("http://localhost:8080/");
+
+            // Добавляем оба префикса
+            server.Prefixes.Add("http://localhost:8000/");
+            server.Prefixes.Add($"http://{localIP}:8000/");
 
             try
             {
                 server.Start();
-                Console.WriteLine("✅ WebSocket сервер запущен на http://localhost:8080/");
-                Console.WriteLine("✅ Ожидание подключений...");
+                Console.WriteLine("✅ WebSocket сервер запущен!");
+                Console.WriteLine($"📍 Ваш IP адрес: {localIP}");
+                Console.WriteLine("🌐 Для подключения используйте:");
+                Console.WriteLine($"   → На этом компьютере: ws://localhost:8000/");
+                Console.WriteLine($"   → На других компьютерах: ws://{localIP}:8000/");
+                Console.WriteLine("");
+                Console.WriteLine("⏳ Ожидание подключений...");
 
                 while (true)
                 {
@@ -35,7 +45,9 @@ namespace Messenger_MeowtalkServer
                         var webSocketContext = await context.AcceptWebSocketAsync(null);
                         var webSocket = webSocketContext.WebSocket;
                         _clients.Add(webSocket);
-                        Console.WriteLine($"✅ Новое подключение. Всего клиентов: {_clients.Count}");
+
+                        var clientIP = context.Request.RemoteEndPoint?.Address?.ToString();
+                        Console.WriteLine($"✅ Новое подключение от {clientIP}. Всего клиентов: {_clients.Count}");
 
                         _ = Task.Run(() => HandleClient(webSocket));
                     }
@@ -49,7 +61,23 @@ namespace Messenger_MeowtalkServer
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Ошибка сервера: {ex.Message}");
+                Console.WriteLine("💡 Попробуйте запустить от имени администратора");
+                Console.ReadKey();
             }
+        }
+
+        // Метод для получения локального IP адреса
+        private static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            return "localhost";
         }
 
         private static async Task HandleClient(WebSocket webSocket)
