@@ -112,11 +112,22 @@ namespace Messenger_MeowtalkServer
 
                         if (message != null)
                         {
+                            // Обрабатываем создание чата
                             if (message.Type == Message.MessageType.System && message.Content.Contains("создал чат"))
                             {
                                 await HandleChatCreation(message.ChatId, message.Sender);
                             }
 
+                            // Для сообщений редактирования и удаления - только рассылаем, не сохраняем в БД
+                            if (message.Type == Message.MessageType.Edit || message.Type == Message.MessageType.Delete)
+                            {
+                                // Просто рассылаем служебные сообщения всем клиентам
+                                _messageHistory.Add(message);
+                                await BroadcastMessage(messageJson);
+                                continue;
+                            }
+
+                            // Стандартная обработка текстовых и системных сообщений
                             if (string.IsNullOrEmpty(message.ChatId))
                             {
                                 message.ChatId = "general";
@@ -164,33 +175,32 @@ namespace Messenger_MeowtalkServer
                                     }
                                 }
                             }
-                            else
+                            else if (message.Type == Message.MessageType.Text)
                             {
-                                if (message.Type == Message.MessageType.Text)
+                                try
                                 {
-                                    try
-                                    {
-                                        await SyncConnectedUsersWithDatabase();
+                                    await SyncConnectedUsersWithDatabase();
 
-                                        var participantIds = _connectedUsers
-                                            .Where(u => u != null && !string.IsNullOrEmpty(u.UserId))
-                                            .Select(u => u.UserId)
-                                            .ToList();
+                                    var participantIds = _connectedUsers
+                                        .Where(u => u != null && !string.IsNullOrEmpty(u.UserId))
+                                        .Select(u => u.UserId)
+                                        .ToList();
 
-                                        if (!participantIds.Any())
-                                        {
-                                            _dbContext.Messages.Add(message);
-                                            await _dbContext.SaveChangesAsync();
-                                        }
-                                        else
-                                        {
-                                            await _messageService.SaveMessageAsync(message, participantIds);
-                                        }
-                                    }
-                                    catch (Exception ex)
+                                    if (!participantIds.Any())
                                     {
-                                        Console.WriteLine($"Ошибка сохранения в БД: {ex.Message}");
+                                        // Если нет участников, сохраняем сообщение без шифрования
+                                        _dbContext.Messages.Add(message);
+                                        await _dbContext.SaveChangesAsync();
                                     }
+                                    else
+                                    {
+                                        // Сохраняем с шифрованием для каждого участника
+                                        await _messageService.SaveMessageAsync(message, participantIds);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Ошибка сохранения в БД: {ex.Message}");
                                 }
                             }
 

@@ -24,13 +24,29 @@ namespace Messenger_Meowtalk.Shared.Models
 
         [JsonPropertyName("type")]
         public MessageType Type { get; set; } = MessageType.Text;
+
         public bool IsMyMessage { get; set; }
         public bool ShowSender { get; set; } = true;
+
+        // Новые свойства для редактирования/удаления
+        [JsonPropertyName("isEdited")]
+        public bool IsEdited { get; set; }
+
+        [JsonPropertyName("isDeleted")]
+        public bool IsDeleted { get; set; }
+
+        [JsonPropertyName("editedAt")]
+        public DateTime? EditedAt { get; set; }
+
+        [JsonPropertyName("originalContent")]
+        public string OriginalContent { get; set; } = string.Empty;
 
         public enum MessageType
         {
             Text,
-            System
+            System,
+            Edit,    // Для редактирования
+            Delete   // Для удаления
         }
     }
 }
