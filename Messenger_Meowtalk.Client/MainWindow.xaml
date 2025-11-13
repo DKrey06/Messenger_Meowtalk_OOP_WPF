@@ -83,6 +83,13 @@
                                             <VisualBrush Visual="{Binding ElementName=AvatarImage}"/>
                                         </Ellipse.OpacityMask>
                                     </Ellipse>
+                                    <TextBlock Grid.Column="0" 
+                                        Text="{Binding ChatIcon}"
+                                        FontSize="16"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,10,0"
+                                        Foreground="White"/>
 
                                     <Image x:Name="AvatarImage" Source="/Assets/Images/default-avatar.png" 
                                Height="45" Width="45" Margin="0,0,10,0" Opacity="0"/>

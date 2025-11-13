@@ -13,6 +13,12 @@ namespace Messenger_Meowtalk.Shared.Models
 
         public string ChatId { get; set; } = Guid.NewGuid().ToString();
 
+        // Добавляем тип чата
+        public ChatType Type { get; set; } = ChatType.Private;
+
+        // Список участников чата
+        public ObservableCollection<User> Participants { get; set; } = new();
+
         public string Name
         {
             get => _name;
@@ -55,6 +61,15 @@ namespace Messenger_Meowtalk.Shared.Models
             }
         }
 
+        // Иконка чата в зависимости от типа
+        public string ChatIcon
+        {
+            get
+            {
+                return Type == ChatType.Group ? "👥" : "👤";
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public Chat()
@@ -72,11 +87,19 @@ namespace Messenger_Meowtalk.Shared.Models
             OnPropertyChanged(nameof(LastMessage));
             OnPropertyChanged(nameof(LastMessageTime));
             OnPropertyChanged(nameof(LastMessageTimestamp));
+            OnPropertyChanged(nameof(ChatIcon));
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+    }
+
+    // Тип чата
+    public enum ChatType
+    {
+        Private,    // Личный чат
+        Group       // Групповой чат
     }
 }

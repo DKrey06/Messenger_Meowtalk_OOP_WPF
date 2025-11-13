@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Messenger_Meowtalk.Shared.Models;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
-using Messenger_Meowtalk.Shared.Models;
 
 namespace Messenger_Meowtalk.Client.Services
 {
@@ -14,6 +15,7 @@ namespace Messenger_Meowtalk.Client.Services
         public ObservableCollection<Chat> Chats { get; } = new();
         public event Action<Message> MessageReceived;
         public event Action<string> ConnectionStatusChanged;
+        public event Action<string[]> OnlineUsersUpdated;
 
         public ChatService()
         {
@@ -37,6 +39,16 @@ namespace Messenger_Meowtalk.Client.Services
 
         private void OnMessageReceived(Message message)
         {
+            // Обрабатываем системные сообщения со списком пользователей
+            if (message.Type == Message.MessageType.System &&
+                message.Content.StartsWith("ONLINE_USERS:"))
+            {
+                var usersJson = message.Content.Substring("ONLINE_USERS:".Length);
+                var onlineUsers = JsonSerializer.Deserialize<string[]>(usersJson);
+                OnlineUsersUpdated?.Invoke(onlineUsers);
+                return;
+            }
+
             // Находим чат для сообщения или создаем новый
             var chat = FindOrCreateChat(message.ChatId, message.Sender);
 

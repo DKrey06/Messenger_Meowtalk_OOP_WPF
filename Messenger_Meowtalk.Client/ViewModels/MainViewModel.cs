@@ -138,16 +138,29 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
             if (chat == null)
             {
+                // Определяем тип чата по ChatId
+                var isGroupChat = message.ChatId?.StartsWith("group_") == true;
+
                 chat = new Chat
                 {
                     ChatId = message.ChatId ?? $"private_{message.Sender}",
-                    Name = message.Sender == CurrentUser.Username ? "Избранное" : message.Sender
+                    Name = message.Sender == CurrentUser.Username ? "Избранное" : message.Sender,
+                    Type = isGroupChat ? ChatType.Group : ChatType.Private
                 };
 
-                Chats.Insert(0, chat); 
+                Chats.Insert(0, chat);
             }
 
             return chat;
+        }
+        // Добавляем метод для обновления списка доступных пользователей
+        public void UpdateAvailableUsers(string[] users)
+        {
+            AvailableUsers.Clear();
+            foreach (var user in users.Where(u => u != CurrentUser.Username))
+            {
+                AvailableUsers.Add(user);
+            }
         }
 
         private void MoveChatToTop(Chat chat)
@@ -266,32 +279,81 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
 
 
+        private ObservableCollection<string> _availableUsers = new();
+        public ObservableCollection<string> AvailableUsers
+        {
+            get => _availableUsers;
+            set => SetProperty(ref _availableUsers, value);
+        }
+
+        // Заменяем метод StartNewChat:
         private void StartNewChat()
         {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var newChatWindow = new NewChatWindow(CurrentUser.Username, AvailableUsers.ToArray());
 
-                var newChat = new Chat
+                if (newChatWindow.ShowDialog() == true)
                 {
-                    ChatId = $"private_{DateTime.Now.Ticks}",
-                    Name = "Новый чат"
-                };
-                newChat.Messages.Add(new Message
-                {
-                    Sender = "System",
-                    Content = "Это новый чат. Начните общение!",
-                    Type = Message.MessageType.System,
-                    Timestamp = DateTime.Now,
-                    IsMyMessage = false
-                });
-                newChat.RefreshLastMessageProperties();
+                    Chat newChat;
 
-                Chats.Insert(0, newChat);
-                SelectedChat = newChat;
+                    if (newChatWindow.IsGroupChat)
+                    {
+                        // Создаем групповой чат
+                        newChat = new Chat
+                        {
+                            ChatId = $"group_{DateTime.Now.Ticks}",
+                            Name = newChatWindow.ChatName,
+                            Type = ChatType.Group
+                        };
 
-                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-                {
+                        // Добавляем участников (включая текущего пользователя)
+                        newChat.Participants.Add(new User { Username = CurrentUser.Username });
+                        foreach (var username in newChatWindow.SelectedUsers)
+                        {
+                            newChat.Participants.Add(new User { Username = username });
+                        }
+
+                        newChat.Messages.Add(new Message
+                        {
+                            Sender = "System",
+                            Content = $"Создан групповой чат. Участники: {string.Join(", ", newChatWindow.SelectedUsers)}",
+                            Type = Message.MessageType.System,
+                            Timestamp = DateTime.Now,
+                            IsMyMessage = false
+                        });
+                    }
+                    else
+                    {
+                        // Создаем личный чат
+                        var otherUser = newChatWindow.SelectedUsers.First();
+                        newChat = new Chat
+                        {
+                            ChatId = $"private_{CurrentUser.Username}_{otherUser}",
+                            Name = otherUser,
+                            Type = ChatType.Private
+                        };
+
+                        newChat.Participants.Add(new User { Username = CurrentUser.Username });
+                        newChat.Participants.Add(new User { Username = otherUser });
+
+                        newChat.Messages.Add(new Message
+                        {
+                            Sender = "System",
+                            Content = "Это начало личной переписки",
+                            Type = Message.MessageType.System,
+                            Timestamp = DateTime.Now,
+                            IsMyMessage = false
+                        });
+                    }
+
+                    newChat.RefreshLastMessageProperties();
+                    Chats.Insert(0, newChat);
+                    SelectedChat = newChat;
+
                     MessageTextBox_Focus();
-                }));
-            
+                }
+            });
         }
 
         private void MessageTextBox_Focus()
