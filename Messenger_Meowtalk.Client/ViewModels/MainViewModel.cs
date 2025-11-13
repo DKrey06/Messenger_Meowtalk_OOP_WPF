@@ -23,6 +23,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
         public ObservableCollection<Chat> Chats { get; }
         public ObservableCollection<EmojiItem> Emojis { get; } = new();
         public ObservableCollection<EmojiItem> Stickers { get; } = new();
+        private readonly HashSet<string> _discoveredUsers = new();
 
         // События для UI
         public event EventHandler MessageReceived;
@@ -97,8 +98,57 @@ namespace Messenger_Meowtalk.Client.ViewModels
             InitializeTestChats();
             InitializeEmojis();
             InitializeStickers();
+            InitializeTestUsers();
         }
+        private void InitializeTestUsers()
+        {
+            // Добавляем пользователей из существующих тестовых чатов
+            var initialUsers = new[] { "Марина", "Иван", "Алексей" };
+            foreach (var user in initialUsers)
+            {
+                _discoveredUsers.Add(user);
+            }
+            UpdateAvailableUsers();
+        }
+        // Метод для создания избранного чата
+        public void CreateFavoriteChat()
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var chatName = "Избранное";
+                var favoriteChatId = $"favorite_{CurrentUser.Username}";
 
+                // Проверяем, нет ли уже такого чата
+                var existingChat = Chats.FirstOrDefault(c => c.ChatId == favoriteChatId);
+                if (existingChat != null)
+                {
+                    SelectedChat = existingChat;
+                    return;
+                }
+
+                var favoriteChat = new Chat
+                {
+                    ChatId = favoriteChatId,
+                    Name = chatName,
+                    Type = ChatType.Private
+                };
+
+                favoriteChat.Messages.Add(new Message
+                {
+                    Sender = "System",
+                    Content = "Это ваш личный чат для заметок и важных сообщений",
+                    Type = Message.MessageType.System,
+                    Timestamp = DateTime.Now,
+                    IsMyMessage = false
+                });
+
+                favoriteChat.RefreshLastMessageProperties();
+                Chats.Insert(0, favoriteChat);
+                SelectedChat = favoriteChat;
+
+                Debug.WriteLine($"Создан избранный чат для {CurrentUser.Username}");
+            });
+        }
         private async Task InitializeConnectionAsync()
         {
 
@@ -117,19 +167,42 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private void ProcessIncomingMessage(Message message)
         {
-
-                var chat = FindOrCreateChatForMessage(message);
-                chat.Messages.Add(message);
-
-                chat.RefreshLastMessageProperties();
-
-                if (chat == SelectedChat)
+            // Автоматически обнаруживаем пользователей из входящих сообщений
+            if (!string.IsNullOrEmpty(message.Sender) &&
+                message.Sender != CurrentUser.Username &&
+                message.Sender != "System")
+            {
+                if (_discoveredUsers.Add(message.Sender))
                 {
-                    OnPropertyChanged(nameof(SelectedChat));
-                    MessageReceived?.Invoke(this, EventArgs.Empty);
+                    // Новый пользователь обнаружен
+                    UpdateAvailableUsers();
+                    Debug.WriteLine($"Обнаружен новый пользователь: {message.Sender}");
                 }
-                MoveChatToTop(chat);
+            }
 
+            var chat = FindOrCreateChatForMessage(message);
+            chat.Messages.Add(message);
+            chat.RefreshLastMessageProperties();
+
+            if (chat == SelectedChat)
+            {
+                OnPropertyChanged(nameof(SelectedChat));
+                MessageReceived?.Invoke(this, EventArgs.Empty);
+            }
+            MoveChatToTop(chat);
+        }
+        private void UpdateAvailableUsers()
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                AvailableUsers.Clear();
+                foreach (var user in _discoveredUsers.Where(u => u != CurrentUser.Username))
+                {
+                    AvailableUsers.Add(user);
+                }
+
+                Debug.WriteLine($"Доступные пользователи: {string.Join(", ", AvailableUsers)}");
+            });
         }
 
         private Chat FindOrCreateChatForMessage(Message message)
@@ -291,6 +364,23 @@ namespace Messenger_Meowtalk.Client.ViewModels
         {
             Application.Current.Dispatcher.Invoke(() =>
             {
+                // Если нет других пользователей, предлагаем создать избранный чат
+                if (AvailableUsers.Count == 0)
+                {
+                    var result = MessageBox.Show(
+                        "Пока нет других пользователей для чата.\n\n" +
+                        "Хотите создать личный избранный чат для заметок?",
+                        "Нет пользователей",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        CreateFavoriteChat();
+                    }
+                    return;
+                }
+
                 var newChatWindow = new NewChatWindow(CurrentUser.Username, AvailableUsers.ToArray());
 
                 if (newChatWindow.ShowDialog() == true)
@@ -307,7 +397,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
                             Type = ChatType.Group
                         };
 
-                        // Добавляем участников (включая текущего пользователя)
+                        // Добавляем участников
                         newChat.Participants.Add(new User { Username = CurrentUser.Username });
                         foreach (var username in newChatWindow.SelectedUsers)
                         {
@@ -317,7 +407,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
                         newChat.Messages.Add(new Message
                         {
                             Sender = "System",
-                            Content = $"Создан групповой чат. Участники: {string.Join(", ", newChatWindow.SelectedUsers)}",
+                            Content = $"Создан групповой чат",
                             Type = Message.MessageType.System,
                             Timestamp = DateTime.Now,
                             IsMyMessage = false
@@ -340,7 +430,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
                         newChat.Messages.Add(new Message
                         {
                             Sender = "System",
-                            Content = "Это начало личной переписки",
+                            Content = "Начало переписки",
                             Type = Message.MessageType.System,
                             Timestamp = DateTime.Now,
                             IsMyMessage = false
@@ -350,7 +440,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
                     newChat.RefreshLastMessageProperties();
                     Chats.Insert(0, newChat);
                     SelectedChat = newChat;
-
                     MessageTextBox_Focus();
                 }
             });

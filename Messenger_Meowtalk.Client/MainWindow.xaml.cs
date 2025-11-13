@@ -127,6 +127,10 @@ namespace Messenger_Meowtalk.Client
         public void FocusMessageTextBox()
         {
             MessageTextBox?.Focus();
-        }      
+        }
+        private void FavoriteChatButton_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.CreateFavoriteChat();
+        }
     }
 }

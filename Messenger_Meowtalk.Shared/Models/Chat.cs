@@ -70,7 +70,7 @@ namespace Messenger_Meowtalk.Shared.Models
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public Chat()
         {

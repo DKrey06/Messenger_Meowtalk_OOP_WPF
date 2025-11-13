@@ -1,16 +1,17 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
-using Messenger_Meowtalk.Shared.Models;
+using Messenger_Meowtalk.Client.Models;
 
 namespace Messenger_Meowtalk.Client
 {
     public partial class NewChatWindow : Window
     {
         public ObservableCollection<SelectableUser> AvailableUsers { get; } = new();
+
         public bool IsGroupChat => GroupChatRadio?.IsChecked == true;
-        public string ChatName => IsGroupChat ? GroupNameTextBox.Text : string.Empty;
+        public string ChatName => IsGroupChat ? GroupNameTextBox?.Text : string.Empty;
+
         public string[] SelectedUsers => AvailableUsers
             .Where(u => u.IsSelected)
             .Select(u => u.Username)
@@ -27,13 +28,22 @@ namespace Messenger_Meowtalk.Client
             }
 
             DataContext = this;
+
+            // Управляем видимостью элементов в зависимости от наличия пользователей
+            if (AvailableUsers.Count == 0)
+            {
+                UsersInfoText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                UsersInfoText.Visibility = Visibility.Collapsed;
+            }
         }
 
         private void CreateButton_Click(object sender, RoutedEventArgs e)
         {
             if (IsGroupChat)
             {
-                // Для группового чата проверяем, что выбраны участники и указано название
                 if (string.IsNullOrWhiteSpace(ChatName))
                 {
                     MessageBox.Show("Введите название группового чата", "Ошибка",
@@ -50,7 +60,7 @@ namespace Messenger_Meowtalk.Client
             }
             else
             {
-                // Для личного чата должен быть выбран ровно один пользователь
+                // Для личного чата проверяем, что выбран ровно один пользователь
                 if (SelectedUsers.Length != 1)
                 {
                     MessageBox.Show("Для личного чата выберите одного пользователя", "Ошибка",
@@ -68,12 +78,5 @@ namespace Messenger_Meowtalk.Client
             DialogResult = false;
             Close();
         }
-    }
-
-    // Вспомогательный класс для выбора пользователей
-    public class SelectableUser
-    {
-        public string Username { get; set; } = string.Empty;
-        public bool IsSelected { get; set; }
     }
 }

@@ -11,8 +11,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -46,19 +46,33 @@
         <!-- Список доступных пользователей -->
         <Border Grid.Row="3" BorderBrush="LightGray" BorderThickness="1" 
                 Background="White" Margin="0,0,0,10">
-            <ScrollViewer MaxHeight="200">
-                <ItemsControl x:Name="UsersList" ItemsSource="{Binding AvailableUsers}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Padding="10,5" BorderBrush="LightGray" BorderThickness="0,0,0,1">
-                                <CheckBox Content="{Binding Username}" 
-                                          IsChecked="{Binding IsSelected}"
-                                          FontSize="{StaticResource FontSizeNormal}"/>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+            <Grid>
+                <!-- Сообщение когда пользователей нет -->
+                <TextBlock x:Name="UsersInfoText" 
+                           Text="Пока нет других пользователей. Отправьте сообщение кому-нибудь, чтобы они появились здесь."
+                           Visibility="Collapsed"
+                           FontStyle="Italic"
+                           Foreground="Gray"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Margin="10"/>
+
+                <!-- Список пользователей -->
+                <ScrollViewer MaxHeight="200">
+                    <ItemsControl x:Name="UsersList" ItemsSource="{Binding AvailableUsers}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10,5" BorderBrush="LightGray" BorderThickness="0,0,0,1">
+                                    <CheckBox Content="{Binding Username}" 
+                                              IsChecked="{Binding IsSelected}"
+                                              FontSize="{StaticResource FontSizeNormal}"/>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
         </Border>
 
         <!-- Кнопки -->
