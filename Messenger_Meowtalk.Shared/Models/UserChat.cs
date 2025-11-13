@@ -6,6 +6,10 @@ namespace Messenger_Meowtalk.Shared.Models
 {
     public class UserChat
     {
+        [Key]
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
         [JsonPropertyName("userId")]
         public string UserId { get; set; }
 

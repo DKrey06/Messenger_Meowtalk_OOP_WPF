@@ -24,7 +24,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
         public ObservableCollection<EmojiItem> Emojis { get; } = new();
         public ObservableCollection<EmojiItem> Stickers { get; } = new();
 
-        // События для UI
         public event EventHandler MessageReceived;
         public event EventHandler ChatSelected;
         public event EventHandler<string> ConnectionStatusChanged;
@@ -36,10 +35,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 if (SetProperty(ref _selectedChat, value))
                 {
-                    Debug.WriteLine($"Выбран чат: {_selectedChat?.Name ?? "null"}");
                     ChatSelected?.Invoke(this, EventArgs.Empty);
-
-                    // Обновляем команду отправки сообщения
                     (SendMessageCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 }
             }
@@ -52,7 +48,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 if (SetProperty(ref _messageText, value))
                 {
-                    // Обновляем состояние команды отправки при изменении текста
                     (SendMessageCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 }
             }
@@ -63,6 +58,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
             get => _connectionStatus;
             set => SetProperty(ref _connectionStatus, value);
         }
+
         public bool IsEmojiPanelOpen
         {
             get => _isEmojiPanelOpen;
@@ -101,35 +97,92 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private async Task InitializeConnectionAsync()
         {
-
             await _chatService.ConnectAsync(CurrentUser.Username);
-            
         }
 
         private void OnMessageReceivedFromService(Message message)
         {
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    ProcessIncomingMessage(message);
-                });
-          
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                ProcessIncomingMessage(message);
+            });
         }
 
         private void ProcessIncomingMessage(Message message)
         {
-
-                var chat = FindOrCreateChatForMessage(message);
-                chat.Messages.Add(message);
-
-                chat.RefreshLastMessageProperties();
-
-                if (chat == SelectedChat)
+            if (message.Type == Message.MessageType.System && message.Content.Contains("создал чат"))
+            {
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    OnPropertyChanged(nameof(SelectedChat));
-                    MessageReceived?.Invoke(this, EventArgs.Empty);
-                }
-                MoveChatToTop(chat);
+                    HandleChatCreationMessage(message);
+                });
+                return;
+            }
 
+            var chat = FindOrCreateChatForMessage(message);
+
+            if (!chat.Messages.Any(m => m.Id == message.Id && message.Id != "0"))
+            {
+                chat.Messages.Add(message);
+            }
+
+            chat.RefreshLastMessageProperties();
+
+            if (chat == SelectedChat)
+            {
+                OnPropertyChanged(nameof(SelectedChat));
+                MessageReceived?.Invoke(this, EventArgs.Empty);
+            }
+            MoveChatToTop(chat);
+        }
+
+        private void HandleChatCreationMessage(Message message)
+        {
+            var chatId = ExtractChatIdFromCreationMessage(message.Content);
+            if (string.IsNullOrEmpty(chatId)) return;
+
+            var existingChat = Chats.FirstOrDefault(c => c.ChatId == chatId);
+            if (existingChat != null) return;
+
+            var newChat = new Chat
+            {
+                ChatId = chatId,
+                Name = $"Чат {chatId.Replace("private_", "")}"
+            };
+
+            newChat.Messages.Add(new Message
+            {
+                Sender = "System",
+                Content = "Чат создан. Начните общение!",
+                Type = Message.MessageType.System,
+                Timestamp = DateTime.Now,
+                IsMyMessage = false
+            });
+
+            newChat.RefreshLastMessageProperties();
+            Chats.Insert(0, newChat);
+
+            if (message.Sender == CurrentUser.Username)
+            {
+                SelectedChat = newChat;
+            }
+        }
+
+        private string ExtractChatIdFromCreationMessage(string content)
+        {
+            try
+            {
+                var parts = content.Split(new[] { "создал чат" }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2)
+                {
+                    return parts[1].Trim();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка извлечения chatId: {ex.Message}");
+            }
+            return null;
         }
 
         private Chat FindOrCreateChatForMessage(Message message)
@@ -140,14 +193,25 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 chat = new Chat
                 {
-                    ChatId = message.ChatId ?? $"private_{message.Sender}",
-                    Name = message.Sender == CurrentUser.Username ? "Избранное" : message.Sender
+                    ChatId = message.ChatId,
+                    Name = GetChatDisplayName(message.ChatId, message.Sender)
                 };
 
-                Chats.Insert(0, chat); 
+                Chats.Insert(0, chat);
             }
 
             return chat;
+        }
+
+        private string GetChatDisplayName(string chatId, string sender)
+        {
+            if (chatId == "general")
+                return "Общий чат";
+
+            if (chatId.StartsWith("private_"))
+                return $"Приватный чат {chatId.Replace("private_", "").Substring(0, 6)}...";
+
+            return $"Чат {chatId}";
         }
 
         private void MoveChatToTop(Chat chat)
@@ -165,7 +229,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 ConnectionStatus = status;
                 ConnectionStatusChanged?.Invoke(this, status);
-                
             });
         }
 
@@ -179,10 +242,9 @@ namespace Messenger_Meowtalk.Client.ViewModels
         private async Task SendMessageAsync()
         {
             if (!CanSendMessage()) return;
-                var messageContent = MessageText.Trim();
-
-                MessageText = string.Empty;
-                await _chatService.SendMessageAsync(messageContent, SelectedChat.ChatId);    
+            var messageContent = MessageText.Trim();
+            MessageText = string.Empty;
+            await _chatService.SendMessageAsync(messageContent, SelectedChat.ChatId);
         }
 
         private void ToggleEmojiPanel()
@@ -196,47 +258,35 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
             if (emoji.IsSticker)
             {
-                // Для стикеров отправляем как специальное сообщение
                 _ = SendStickerAsync(emoji.Code);
             }
             else
             {
-                // Для эмодзи добавляем в текстовое поле
                 MessageText += emoji.Code;
-
-                // Сохраняем фокус на текстовом поле после добавления эмодзи
                 MessageTextBox_Focus();
 
-                // Немного задерживаем вызов, чтобы WPF успел обновить UI
                 Task.Delay(50).ContinueWith(_ =>
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        // Устанавливаем курсор в конец текста
                         var window = Application.Current.Windows.OfType<MainWindow>().FirstOrDefault();
                         window?.FocusMessageTextBoxAndSetCursorToEnd();
                     });
                 }, TaskScheduler.FromCurrentSynchronizationContext());
             }
 
-            // Закрываем панель после выбора
             IsEmojiPanelOpen = false;
         }
 
         private async Task SendStickerAsync(string stickerCode)
         {
             if (SelectedChat == null) return;
-
-            // Отправляем стикер как текстовое сообщение с префиксом
             await _chatService.SendMessageAsync($"[STICKER]{stickerCode}", SelectedChat.ChatId);
-
-            // Восстанавливаем фокус после отправки стикера
             MessageTextBox_Focus();
         }
 
         private void InitializeEmojis()
         {
-            // Популярные эмодзи
             var popularEmojis = new[]
             {
                 "😊", "😂", "🥰", "😍", "🤔", "😎", "🥺", "😭", "😡", "👍",
@@ -250,7 +300,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private void InitializeStickers()
         {
-            // Простые текстовые стикеры (можно заменить на картинки)
             var stickers = new[]
             {
                 "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "╰(▔∀▔)╯", "(～￣▽￣)～", "ヽ(•‿•)ノ",
@@ -264,34 +313,44 @@ namespace Messenger_Meowtalk.Client.ViewModels
             }
         }
 
-
-
-        private void StartNewChat()
+        private async void StartNewChat()
         {
+            var newChatId = $"private_{DateTime.Now.Ticks}";
+            var newChat = new Chat
+            {
+                ChatId = newChatId,
+                Name = $"Новый чат {DateTime.Now:HH:mm}"
+            };
 
-                var newChat = new Chat
-                {
-                    ChatId = $"private_{DateTime.Now.Ticks}",
-                    Name = "Новый чат"
-                };
-                newChat.Messages.Add(new Message
-                {
-                    Sender = "System",
-                    Content = "Это новый чат. Начните общение!",
-                    Type = Message.MessageType.System,
-                    Timestamp = DateTime.Now,
-                    IsMyMessage = false
-                });
-                newChat.RefreshLastMessageProperties();
+            Chats.Insert(0, newChat);
+            SelectedChat = newChat;
 
-                Chats.Insert(0, newChat);
-                SelectedChat = newChat;
+            var systemMessage = new Message
+            {
+                Sender = CurrentUser.Username,
+                Content = $"{CurrentUser.Username} создал чат {newChatId}",
+                Type = Message.MessageType.System,
+                ChatId = newChatId,
+                Timestamp = DateTime.Now
+            };
 
-                Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    MessageTextBox_Focus();
-                }));
-            
+            await _chatService.SendMessageAsync(systemMessage);
+
+            newChat.Messages.Add(new Message
+            {
+                Sender = "System",
+                Content = "Это новый чат. Начните общение!",
+                Type = Message.MessageType.System,
+                Timestamp = DateTime.Now,
+                IsMyMessage = false
+            });
+
+            newChat.RefreshLastMessageProperties();
+
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                MessageTextBox_Focus();
+            }));
         }
 
         private void MessageTextBox_Focus()
@@ -304,10 +363,10 @@ namespace Messenger_Meowtalk.Client.ViewModels
         {
             MessageBox.Show(
                 $"Настройки пользователя:\n\n" +
-                $"👤 Имя: {CurrentUser.Username}\n" +
-                $"🟢 Статус: {CurrentUser.Status}\n" +
-                $"🆔 ID: {CurrentUser.UserId}\n\n" +
-                $"🌐 Подключение: {ConnectionStatus}",
+                $"Имя: {CurrentUser.Username}\n" +
+                $"Статус: {CurrentUser.Status}\n" +
+                $"ID: {CurrentUser.UserId}\n\n" +
+                $"Подключение: {ConnectionStatus}",
                 "Настройки",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
@@ -315,85 +374,35 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private async Task DisconnectAsync()
         {
-                await _chatService.DisconnectAsync();
-                ConnectionStatus = "Отключено вручную"; 
+            await _chatService.DisconnectAsync();
+            ConnectionStatus = "Отключено вручную";
         }
 
         private void InitializeTestChats()
         {
-           
-                // Тестовый чат 1
-                var chat1 = new Chat
-                {
-                    Name = "Марина",
-                    ChatId = "chat1"
-                };
-                chat1.Messages.Add(new Message
-                {
-                    Sender = "Марина",
-                    Content = "Привет! Как дела?",
-                    Timestamp = DateTime.Now.AddMinutes(-10),
-                    IsMyMessage = false
-                });
-                chat1.RefreshLastMessageProperties(); 
-                Chats.Add(chat1);
-               
+            var generalChat = new Chat
+            {
+                Name = "Общий чат",
+                ChatId = "general"
+            };
+            Chats.Add(generalChat);
 
-                // Тестовый чат 2
-                var chat2 = new Chat
-                {
-                    Name = "Иван",
-                    ChatId = "chat2"
-                };
-                chat2.Messages.Add(new Message
-                {
-                    Sender = "Иван",
-                    Content = "Жду твоего ответа",
-                    Timestamp = DateTime.Now.AddMinutes(-30),
-                    IsMyMessage = false
-                });
-                chat2.RefreshLastMessageProperties();
-                Chats.Add(chat2);
-              
-
-                // Тестовый чат 3
-                var chat3 = new Chat
-                {
-                    Name = "Алексей",
-                    ChatId = "chat3"
-                };
-                chat3.Messages.Add(new Message
-                {
-                    Sender = "Алексей",
-                    Content = "Завтра встреча в 15:00",
-                    Timestamp = DateTime.Now.AddHours(-1),
-                    IsMyMessage = false
-                });
-                chat3.RefreshLastMessageProperties(); 
-                Chats.Add(chat3);
-              
-                if (Chats.Count > 0)
-                {
-                    SelectedChat = Chats[0];
-                    
-                }
-            }    
-        
+            if (Chats.Count > 0)
+            {
+                SelectedChat = Chats[0];
+            }
+        }
 
         public async void Cleanup()
         {
- 
-               
-                await DisconnectAsync();
+            await DisconnectAsync();
 
-                if (_chatService != null)
-                {
-                    _chatService.MessageReceived -= OnMessageReceivedFromService;
-                    _chatService.ConnectionStatusChanged -= OnConnectionStatusChangedFromService;
-                }
-                Chats.Clear();
-
-            
+            if (_chatService != null)
+            {
+                _chatService.MessageReceived -= OnMessageReceivedFromService;
+                _chatService.ConnectionStatusChanged -= OnConnectionStatusChangedFromService;
+            }
+            Chats.Clear();
         }
     }
 }

@@ -37,12 +37,8 @@ namespace Messenger_Meowtalk.Client.Services
 
         private void OnMessageReceived(Message message)
         {
-            // Находим чат для сообщения или создаем новый
             var chat = FindOrCreateChat(message.ChatId, message.Sender);
-
-            // Устанавливаем флаг принадлежности сообщения
             message.IsMyMessage = message.Sender == _currentUser.Username;
-
             MessageReceived?.Invoke(message);
         }
 
@@ -83,6 +79,12 @@ namespace Messenger_Meowtalk.Client.Services
                 Type = Message.MessageType.Text
             };
 
+            await _webSocketService.SendMessageAsync(message);
+        }
+
+        public async Task SendMessageAsync(Message message)
+        {
+            if (message == null || string.IsNullOrWhiteSpace(message.Content)) return;
             await _webSocketService.SendMessageAsync(message);
         }
 

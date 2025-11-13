@@ -10,8 +10,9 @@ namespace Messenger_Meowtalk.Shared.Models
     public class User
     {
         [Key]
+        public string UserId { get; set; } = Guid.NewGuid().ToString(); 
+
         public string Username { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
         public bool IsOnline { get; set; }
         public string Status { get; set; } = string.Empty;
 

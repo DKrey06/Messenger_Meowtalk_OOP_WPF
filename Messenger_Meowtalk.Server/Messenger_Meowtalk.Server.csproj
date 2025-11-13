@@ -10,10 +10,14 @@
 		<ProjectReference Include="..\Messenger_Meowtalk.Shared\Messenger_Meowtalk.Shared.csproj" />
 	</ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0">
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
         <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
+      <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.2" />
       <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.0" />
     </ItemGroup>
 </Project>
