@@ -18,6 +18,11 @@
             <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <local:MessageBackgroundConverter x:Key="MessageBackgroundConverter"/>
             <local:MessageAlignmentConverter x:Key="MessageAlignmentConverter"/>
+
+            <local:StickerImageConverter x:Key="StickerImageConverter"/>
+            <local:StickerVisibilityConverter x:Key="StickerVisibilityConverter"/>
+            <local:TextMessageVisibilityConverter x:Key="TextMessageVisibilityConverter"/>
+            
         </ResourceDictionary>
     </Application.Resources>
 </Application>

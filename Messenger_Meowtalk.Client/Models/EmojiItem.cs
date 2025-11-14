@@ -8,8 +8,9 @@ namespace Messenger_Meowtalk.Client.Models
 {
     public class EmojiItem
     {
-        public string Code { get; set; } = string.Empty; // Unicode эмодзи или код стикера
+        public string Code { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public bool IsSticker { get; set; } // true для стикеров, false для эмодзи
+        public bool IsSticker { get; set; }
+        public string ImagePath { get; set; } = string.Empty;
     }
 }
