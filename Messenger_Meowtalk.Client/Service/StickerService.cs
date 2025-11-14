@@ -1,7 +1,8 @@
-﻿using System.Collections.ObjectModel;
+﻿using Messenger_Meowtalk.Client.Models;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using Messenger_Meowtalk.Client.Models;
 
 namespace Messenger_Meowtalk.Client.Services
 {
@@ -16,28 +17,43 @@ namespace Messenger_Meowtalk.Client.Services
 
         private void LoadGraphicStickers()
         {
-            var stickersFolder = "Assets/Stickers/default_cats";
-
-            if (!Directory.Exists(stickersFolder))
+            try
             {
-                Directory.CreateDirectory(stickersFolder);
-                return;
-            }
+                string stickersRoot = "Assets/Stickers/";
 
-            var imageFiles = Directory.GetFiles(stickersFolder, "*.png")
-                                   .Concat(Directory.GetFiles(stickersFolder, "*.jpg"))
-                                   .Concat(Directory.GetFiles(stickersFolder, "*.jpeg"));
-
-            foreach (var filePath in imageFiles)
-            {
-                var sticker = new EmojiItem
+                if (!Directory.Exists(stickersRoot))
                 {
-                    Code = Path.GetFileNameWithoutExtension(filePath),
-                    Description = "Стикер",
-                    IsSticker = true,
-                    ImagePath = filePath
-                };
-                GraphicStickers.Add(sticker);
+                    Directory.CreateDirectory(stickersRoot);
+                    return;
+                }
+
+                var imageFiles = Directory.GetFiles(stickersRoot, "*.*", SearchOption.AllDirectories)
+                    .Where(file => file.ToLower().EndsWith(".png") ||
+                                   file.ToLower().EndsWith(".jpg") ||
+                                   file.ToLower().EndsWith(".jpeg"));
+
+                foreach (var filePath in imageFiles)
+                {
+                    // Конвертируем в относительный путь для pack URI
+                    var relativePath = filePath.Replace("\\", "/");
+                    if (relativePath.StartsWith("Assets/"))
+                    {
+                        relativePath = "/" + relativePath; // Делаем абсолютным в сборке
+                    }
+
+                    var sticker = new EmojiItem
+                    {
+                        Code = Path.GetFileNameWithoutExtension(filePath),
+                        Description = "Стикер",
+                        IsSticker = true,
+                        ImagePath = relativePath // Используем относительный путь
+                    };
+                    GraphicStickers.Add(sticker);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.WriteLine($"Ошибка загрузки стикеров: {ex.Message}");
             }
         }
     }

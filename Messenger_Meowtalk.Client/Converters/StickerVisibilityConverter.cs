@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
+using Messenger_Meowtalk.Shared.Models;
 
 namespace Messenger_Meowtalk.Client.Converters
 {
@@ -9,7 +10,7 @@ namespace Messenger_Meowtalk.Client.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value is string content && content.StartsWith("[STICKER_IMG]")
+            return value is Message.MessageType type && type == Message.MessageType.Sticker
                 ? Visibility.Visible
                 : Visibility.Collapsed;
         }

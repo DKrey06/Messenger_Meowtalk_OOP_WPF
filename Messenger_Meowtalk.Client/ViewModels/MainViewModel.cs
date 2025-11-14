@@ -122,6 +122,13 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private void ProcessIncomingMessage(Message message)
         {
+            if (message.Type == Message.MessageType.Text &&
+        !string.IsNullOrEmpty(message.Content) &&
+        (message.Content.StartsWith("[STICKER]") || IsImagePath(message.Content)))
+            {
+                message.Type = Message.MessageType.Sticker;
+            }
+
             if (message.Type == Message.MessageType.System && message.Content.Contains("создал чат"))
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -153,7 +160,12 @@ namespace Messenger_Meowtalk.Client.ViewModels
             }
             MoveChatToTop(chat);
         }
-
+        private bool IsImagePath(string content)
+        {
+            return content.ToLower().EndsWith(".png") ||
+                   content.ToLower().EndsWith(".jpg") ||
+                   content.ToLower().EndsWith(".jpeg");
+        }
         private void HandleChatCreationMessage(Message message)
         {
             var chatId = ExtractChatIdFromCreationMessage(message.Content);
@@ -314,8 +326,18 @@ namespace Messenger_Meowtalk.Client.ViewModels
         {
             if (SelectedChat == null) return;
 
-            // Отправляем специальное сообщение для графического стикера
-            await _chatService.SendMessageAsync($"[STICKER_IMG]{sticker.ImagePath}", SelectedChat.ChatId);
+            // ВМЕСТО текстового сообщения создаем сообщение со стикером
+            var message = new Message
+            {
+                Sender = CurrentUser.Username,
+                Content = sticker.ImagePath, // Сохраняем путь к картинке
+                ChatId = SelectedChat.ChatId,
+                Timestamp = DateTime.Now,
+                Type = Message.MessageType.Sticker, // Важно: указываем тип Sticker
+                IsMyMessage = true
+            };
+
+            await _chatService.SendMessageAsync(message);
             MessageTextBox_Focus();
         }
 
