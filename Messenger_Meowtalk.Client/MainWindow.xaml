@@ -225,37 +225,37 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border Margin="10,5" 
-                Padding="15,10" 
-                Background="{Binding IsMyMessage, Converter={StaticResource MessageBackgroundConverter}}"
-                CornerRadius="10"
-                HorizontalAlignment="{Binding IsMyMessage, Converter={StaticResource MessageAlignmentConverter}}"
-                MaxWidth="400">
+            Padding="15,10" 
+            Background="{Binding IsMyMessage, Converter={StaticResource MessageBackgroundConverter}}"
+            CornerRadius="10"
+            HorizontalAlignment="{Binding IsMyMessage, Converter={StaticResource MessageAlignmentConverter}}"
+            MaxWidth="400">
                                     <StackPanel>
                                         <TextBlock Text="{Binding Sender}" 
-                           FontSize="{StaticResource FontSizeSmall}"
-                           FontWeight="SemiBold"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           Visibility="{Binding ShowSender, Converter={StaticResource NullToVisibilityConverter}}"/>
+                       FontSize="{StaticResource FontSizeSmall}"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Visibility="{Binding ShowSender, Converter={StaticResource NullToVisibilityConverter}}"/>
 
-                                        <!-- Проверяем, является ли сообщение графическим стикером -->
-                                        <Image Source="{Binding Content, Converter={StaticResource StickerImageConverter}}"
-                       Width="128" Height="128"
-                       Stretch="Uniform"
-                       Visibility="{Binding Content, Converter={StaticResource StickerVisibilityConverter}}"/>
+                                        <!-- Стикер -->
+                                        <Image Source="{Binding Content}" 
+                   Width="128" Height="128"
+                   Stretch="Uniform"
+                   Visibility="{Binding Type, Converter={StaticResource StickerVisibilityConverter}}"/>
 
-                                        <!-- Обычное текстовое сообщение -->
+                                        <!-- Текстовое сообщение -->
                                         <TextBlock Text="{Binding Content}" 
-                           FontSize="{StaticResource FontSizeNormal}"
-                           Foreground="{StaticResource TextPrimaryBrush}"
-                           TextWrapping="Wrap"
-                           Margin="0,2,0,0"
-                           Visibility="{Binding Content, Converter={StaticResource TextMessageVisibilityConverter}}"/>
+                       FontSize="{StaticResource FontSizeNormal}"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       TextWrapping="Wrap"
+                       Margin="0,2,0,0"
+                       Visibility="{Binding Type, Converter={StaticResource TextMessageVisibilityConverter}}"/>
 
                                         <TextBlock Text="{Binding Timestamp, StringFormat='HH:mm'}" 
-                           FontSize="{StaticResource FontSizeSmall}"
-                           Foreground="{StaticResource TextSecondaryBrush}"
-                           HorizontalAlignment="Right"
-                           Margin="0,5,0,0"/>
+                       FontSize="{StaticResource FontSizeSmall}"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Right"
+                       Margin="0,5,0,0"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>
@@ -413,17 +413,15 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Button Background="Transparent"
-                                BorderThickness="0"
-                                Width="40" Height="40"
-                                Cursor="Hand"
-                                ToolTip="{Binding Description}"
-                                Command="{Binding DataContext.InsertEmojiCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding}">
-                                                <Button.Content>
-                                                    <Image Source="{Binding ImagePath}" 
-                                       Width="32" Height="32"
-                                       Stretch="Uniform"/>
-                                                </Button.Content>
+                BorderThickness="0"
+                Width="40" Height="40"
+                Cursor="Hand"
+                ToolTip="{Binding Description}"
+                Command="{Binding DataContext.InsertEmojiCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                CommandParameter="{Binding}">
+                                                <Image Source="{Binding ImagePath}" 
+                   Width="32" Height="32"
+                   Stretch="Uniform"/>
                                             </Button>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>

@@ -30,7 +30,8 @@ namespace Messenger_Meowtalk.Shared.Models
         public enum MessageType
         {
             Text,
-            System
+            System,
+            Sticker
         }
     }
 }
