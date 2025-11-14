@@ -16,4 +16,10 @@
 		<ProjectReference Include="..\Messenger_Meowtalk.Shared\Messenger_Meowtalk.Shared.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="Assets\Sounds\notification.wav">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 </Project>
