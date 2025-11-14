@@ -1,6 +1,5 @@
 ﻿using Messenger_Meowtalk.Shared.Models;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
@@ -35,7 +34,6 @@ namespace Messenger_Meowtalk.Client.Services
 
                 ConnectionStatusChanged?.Invoke("Подключено");
 
-                // Отправляем системное сообщение о подключении
                 var joinMessage = new Message
                 {
                     Sender = username,
@@ -47,7 +45,6 @@ namespace Messenger_Meowtalk.Client.Services
 
                 await SendMessageAsync(joinMessage);
 
-                // Запускаем прослушивание сообщений
                 _ = Task.Run(ListenForMessages);
             }
             catch (Exception ex)
@@ -94,6 +91,76 @@ namespace Messenger_Meowtalk.Client.Services
             }
         }
 
+        public async Task EditMessageAsync(Message message)
+        {
+            try
+            {
+                var editMessage = new Message
+                {
+                    Type = Message.MessageType.System,
+                    Content = $"sync_edit_message:{message.Id}",
+                    ChatId = message.ChatId,
+                    Sender = _currentUser,
+                    Timestamp = DateTime.Now,
+                    OriginalContent = message.Content, // Передаем новое содержимое
+                    IsEdited = message.IsEdited,
+                    EditedTimestamp = message.EditedTimestamp
+                };
+
+                await SendMessageAsync(editMessage);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка отправки редактирования: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task DeleteMessageAsync(Message message)
+        {
+            try
+            {
+                var deleteMessage = new Message
+                {
+                    Type = Message.MessageType.System,
+                    Content = $"sync_delete_message:{message.Id}",
+                    ChatId = message.ChatId,
+                    Sender = _currentUser,
+                    Timestamp = DateTime.Now
+                };
+
+                await SendMessageAsync(deleteMessage);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка отправки удаления: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<bool> ClearChatHistoryAsync(string chatId)
+        {
+            try
+            {
+                var clearMessage = new Message
+                {
+                    Type = Message.MessageType.System,
+                    Content = "clear_chat_history",
+                    ChatId = chatId,
+                    Sender = _currentUser,
+                    Timestamp = DateTime.Now
+                };
+
+                await SendMessageAsync(clearMessage);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка отправки запроса на очистку истории: {ex.Message}");
+                return false;
+            }
+        }
+
         private async Task ListenForMessages()
         {
             var buffer = new byte[4096];
@@ -113,7 +180,6 @@ namespace Messenger_Meowtalk.Client.Services
 
                         if (message != null)
                         {
-                            // Устанавливаем флаг IsMyMessage
                             message.IsMyMessage = message.Sender == _currentUser;
                             MessageReceived?.Invoke(message);
                         }
@@ -141,7 +207,6 @@ namespace Messenger_Meowtalk.Client.Services
             {
                 if (_webSocket?.State == WebSocketState.Open)
                 {
-                    // Отправляем сообщение о выходе
                     var leaveMessage = new Message
                     {
                         Sender = _currentUser,
@@ -166,30 +231,6 @@ namespace Messenger_Meowtalk.Client.Services
             catch (Exception ex)
             {
                 Debug.WriteLine($"Ошибка отключения: {ex.Message}");
-            }
-        }
-
-        public async Task<bool> ClearChatHistoryAsync(string chatId)
-        {
-            try
-            {
-                // Отправляем запрос на сервер для очистки истории
-                var clearMessage = new Message
-                {
-                    Type = Message.MessageType.System,
-                    Content = "clear_chat_history",
-                    ChatId = chatId,
-                    Sender = _currentUser,
-                    Timestamp = DateTime.Now
-                };
-
-                await SendMessageAsync(clearMessage);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Ошибка отправки запроса на очистку истории: {ex.Message}");
-                return false;
             }
         }
     }

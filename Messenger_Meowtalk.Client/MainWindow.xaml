@@ -240,6 +240,19 @@
             CornerRadius="10"
             HorizontalAlignment="{Binding IsMyMessage, Converter={StaticResource MessageAlignmentConverter}}"
             MaxWidth="400">
+
+                                    <!-- ContextMenu для сообщения -->
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Редактировать" 
+                  Click="EditMenuItem_Click"
+                  Visibility="{Binding IsMyMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <MenuItem Header="Удалить" 
+                  Click="DeleteMenuItem_Click"
+                  Visibility="{Binding IsMyMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+
                                     <StackPanel>
                                         <TextBlock Text="{Binding Sender}" 
                        FontSize="{StaticResource FontSizeSmall}"
@@ -260,6 +273,13 @@
                        TextWrapping="Wrap"
                        Margin="0,2,0,0"
                        Visibility="{Binding Type, Converter={StaticResource TextMessageVisibilityConverter}}"/>
+
+                                        <!-- Индикатор редактирования -->
+                                        <TextBlock Text="(ред.)" 
+                       FontSize="{StaticResource FontSizeSmall}"
+                       FontStyle="Italic"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Visibility="{Binding IsEdited, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                         <TextBlock Text="{Binding Timestamp, StringFormat='HH:mm'}" 
                        FontSize="{StaticResource FontSizeSmall}"

@@ -119,6 +119,17 @@ namespace Messenger_MeowtalkServer
                                 continue; 
                             }
 
+                            if (message.Type == Message.MessageType.System && message.Content.StartsWith("sync_edit_message:"))
+                            {
+                                await HandleSyncEditMessage(message);
+                                continue;
+                            }
+                            if (message.Type == Message.MessageType.System && message.Content.StartsWith("sync_delete_message:"))
+                            {
+                                await HandleSyncDeleteMessage(message);
+                                continue;
+                            }
+
                             if (message.Type == Message.MessageType.System && message.Content.Contains("создал чат"))
                             {
                                 await HandleChatCreation(message.ChatId, message.Sender);
@@ -496,6 +507,77 @@ namespace Messenger_MeowtalkServer
             }
         }
 
+        private static async Task HandleSyncEditMessage(Message syncMessage)
+        {
+            try
+            {
+                var messageId = syncMessage.Content.Replace("sync_edit_message:", "");
+
+                // Находим сообщение в базе данных
+                var messageToUpdate = await _dbContext.Messages
+                    .FirstOrDefaultAsync(m => m.Id == messageId);
+
+                if (messageToUpdate != null)
+                {
+                    // Получаем список участников чата
+                    var participantIds = await _dbContext.UserChats
+                        .Where(uc => uc.ChatId == syncMessage.ChatId)
+                        .Select(uc => uc.UserId)
+                        .ToListAsync();
+
+                    // Обновляем сообщение в базе с повторным шифрованием
+                    var success = await _messageService.UpdateMessageAsync(new Message
+                    {
+                        Id = messageId,
+                        Content = syncMessage.OriginalContent, // Новое содержимое
+                        IsEdited = syncMessage.IsEdited,
+                        EditedTimestamp = syncMessage.EditedTimestamp,
+                        OriginalContent = messageToUpdate.Content // Старое содержимое (уже зашифрованное)
+                    }, participantIds);
+
+                    if (success)
+                    {
+                        Console.WriteLine($"Сообщение {messageId} отредактировано пользователем {syncMessage.Sender}");
+                    }
+                }
+
+                // Рассылаем синхронизацию всем клиентам
+                var messageJson = JsonSerializer.Serialize(syncMessage);
+                await BroadcastMessage(messageJson);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обработки редактирования сообщения: {ex.Message}");
+            }
+        }
+
+        private static async Task HandleSyncDeleteMessage(Message syncMessage)
+        {
+            try
+            {
+                var messageId = syncMessage.Content.Replace("sync_delete_message:", "");
+
+                // Удаляем сообщение из базы данных
+                var success = await _messageService.DeleteMessageAsync(messageId);
+
+                if (success)
+                {
+                    Console.WriteLine($"Сообщение {messageId} удалено пользователем {syncMessage.Sender}");
+                }
+                else
+                {
+                    Console.WriteLine($"Не удалось найти сообщение {messageId} для удаления");
+                }
+
+                // Рассылаем синхронизацию всем клиентам
+                var messageJson = JsonSerializer.Serialize(syncMessage);
+                await BroadcastMessage(messageJson);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обработки удаления сообщения: {ex.Message}");
+            }
+        }
         private static async Task SyncConnectedUsersWithDatabase()
         {
             try

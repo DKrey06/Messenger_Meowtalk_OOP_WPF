@@ -189,5 +189,93 @@ namespace Messenger_Meowtalk.Server.Services
                 return false;
             }
         }
+        public async Task<bool> UpdateMessageAsync(Message message, List<string> participantIds)
+        {
+            try
+            {
+                // Находим сообщение в базе
+                var existingMessage = await _context.Messages
+                    .FirstOrDefaultAsync(m => m.Id == message.Id);
+
+                if (existingMessage == null) return false;
+
+                // Шифруем новое содержимое для каждого участника
+                foreach (var participantId in participantIds)
+                {
+                    if (_encryptionService.HasKeyForUser(participantId))
+                    {
+                        // Шифруем новое содержимое
+                        var (encryptedData, iv) = _encryptionService.EncryptMessage(message.Content, participantId);
+
+                        // Находим или создаем запись в EncryptedMessages
+                        var encryptedMessage = await _context.EncryptedMessages
+                            .FirstOrDefaultAsync(em => em.MessageId == message.Id && em.UserId == participantId);
+
+                        if (encryptedMessage != null)
+                        {
+                            // Обновляем существующую запись
+                            encryptedMessage.EncryptedContent = encryptedData;
+                            encryptedMessage.IV = iv;
+                        }
+                        else
+                        {
+                            // Создаем новую запись
+                            encryptedMessage = new EncryptedMessage
+                            {
+                                MessageId = message.Id,
+                                UserId = participantId,
+                                EncryptedContent = encryptedData,
+                                IV = iv
+                            };
+                            _context.EncryptedMessages.Add(encryptedMessage);
+                        }
+                    }
+                }
+
+                // Обновляем основные поля сообщения (Content остается зашифрованным для совместимости)
+                existingMessage.IsEdited = message.IsEdited;
+                existingMessage.EditedTimestamp = message.EditedTimestamp;
+
+                // Для OriginalContent также нужно шифрование, но оставим null если не нужно
+                existingMessage.OriginalContent = null; // Или зашифровать если нужно сохранить оригинал
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка обновления сообщения: {ex.Message}");
+                return false;
+            }
+        }
+        public async Task<bool> DeleteMessageAsync(string messageId)
+        {
+            try
+            {
+                // Находим сообщение в базе
+                var message = await _context.Messages
+                    .FirstOrDefaultAsync(m => m.Id == messageId);
+
+                if (message == null) return false;
+
+                // Удаляем все связанные записи в EncryptedMessages
+                var encryptedMessages = await _context.EncryptedMessages
+                    .Where(em => em.MessageId == messageId)
+                    .ToListAsync();
+
+                _context.EncryptedMessages.RemoveRange(encryptedMessages);
+
+                // Удаляем само сообщение
+                _context.Messages.Remove(message);
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка удаления сообщения: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

@@ -44,6 +44,12 @@ namespace Messenger_Meowtalk.Server.Data
             {
                 entity.Property(m => m.MediaType)
                     .HasDefaultValue(string.Empty);
+                entity.Property(m => m.IsEdited)
+                    .HasDefaultValue(false);
+                entity.Property(m => m.EditedTimestamp)
+                    .IsRequired(false);
+                entity.Property(m => m.OriginalContent)
+                    .IsRequired(false);
             });
 
             modelBuilder.Entity<Chat>()

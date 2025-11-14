@@ -160,5 +160,20 @@ namespace Messenger_Meowtalk.Client
                 MessageTextBox.CaretIndex = MessageTextBox.Text.Length;
             }
         }
+        private void EditMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.DataContext is Message message)
+            {
+                _viewModel.EditMessageCommand?.Execute(message);
+            }
+        }
+
+        private void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.DataContext is Message message)
+            {
+                _viewModel.DeleteMessageCommand?.Execute(message);
+            }
+        }
     }
 }
