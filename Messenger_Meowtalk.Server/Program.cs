@@ -112,6 +112,8 @@ namespace Messenger_MeowtalkServer
 
                         if (message != null)
                         {
+                            Console.WriteLine($"Получено сообщение: {message.Type} от {message.Sender} в чат {message.ChatId}");
+
                             // Обработка создания чата (существующий код)
                             if (message.Type == Message.MessageType.System && message.Content.Contains("создал чат"))
                             {
@@ -132,7 +134,7 @@ namespace Messenger_MeowtalkServer
                                 await CreateUserChatRelationshipsForNewChat(message.ChatId);
                             }
 
-                            // СОХРАНЕНИЕ СТИКЕРОВ В БАЗУ ДАННЫХ
+                            // СОХРАНЕНИЕ СТИКЕРОВ И ТЕКСТА В БАЗУ ДАННЫХ
                             if (message.Type == Message.MessageType.Sticker ||
                                 message.Type == Message.MessageType.Text)
                             {
@@ -145,19 +147,24 @@ namespace Messenger_MeowtalkServer
                                         .Select(u => u.UserId)
                                         .ToList();
 
+                                    Console.WriteLine($"Сохранение сообщения в БД. Участников: {participantIds.Count}");
+
                                     if (!participantIds.Any())
                                     {
                                         _dbContext.Messages.Add(message);
                                         await _dbContext.SaveChangesAsync();
+                                        Console.WriteLine("Сообщение сохранено напрямую");
                                     }
                                     else
                                     {
                                         await _messageService.SaveMessageAsync(message, participantIds);
+                                        Console.WriteLine("Сообщение сохранено через MessageService");
                                     }
                                 }
                                 catch (Exception ex)
                                 {
                                     Console.WriteLine($"Ошибка сохранения в БД: {ex.Message}");
+                                    Console.WriteLine($"StackTrace: {ex.StackTrace}");
                                 }
                             }
 
