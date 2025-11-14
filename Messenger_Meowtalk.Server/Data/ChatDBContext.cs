@@ -40,6 +40,12 @@ namespace Messenger_Meowtalk.Server.Data
                 .HasForeignKey(uc => uc.ChatId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Message>(entity =>
+            {
+                entity.Property(m => m.MediaType)
+                    .HasDefaultValue(string.Empty);
+            });
+
             modelBuilder.Entity<Chat>()
                 .Ignore(c => c.LastMessage)
                 .Ignore(c => c.LastMessageTime)
