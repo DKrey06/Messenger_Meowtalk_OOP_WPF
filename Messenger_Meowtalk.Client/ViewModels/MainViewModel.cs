@@ -31,6 +31,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
         public event EventHandler<string> ConnectionStatusChanged;
 
 
+
         public Chat SelectedChat
         {
             get => _selectedChat;
@@ -40,6 +41,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 {
                     ChatSelected?.Invoke(this, EventArgs.Empty);
                     (SendMessageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                    (ClearChatHistoryCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -74,6 +76,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
         public ICommand DisconnectCommand { get; }
         public ICommand ToggleEmojiPanelCommand { get; }
         public ICommand InsertEmojiCommand { get; }
+        public ICommand ClearChatHistoryCommand { get; }
 
         public MainViewModel(User currentUser)
         {
@@ -84,8 +87,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
             ConnectionStatus = "Подключение...";
 
             _stickerService = new StickerService();
-
-            // ЗАМЕНИ ЭТОТ БЛОК - используй GraphicStickers из StickerService
             foreach (var sticker in _stickerService.GraphicStickers)
             {
                 Stickers.Add(sticker);
@@ -100,6 +101,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
             DisconnectCommand = new RelayCommand(async () => await DisconnectAsync());
             ToggleEmojiPanelCommand = new RelayCommand(ToggleEmojiPanel);
             InsertEmojiCommand = new RelayCommand<EmojiItem>(InsertEmoji);
+            ClearChatHistoryCommand = new RelayCommand(async () => await ClearChatHistoryAsync(), CanClearChatHistory);
 
             _ = InitializeConnectionAsync();
             InitializeTestChats();
@@ -135,6 +137,16 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private void ProcessIncomingMessage(Message message)
         {
+            // Обработка синхронизации очистки истории
+            if (message.Type == Message.MessageType.System && message.Content == "sync_clear_chat_history")
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    HandleSyncClearChatHistory(message);
+                });
+                return;
+            }
+
             // Если это сохраненный стикер из базы, восстанавливаем тип
             if (message.Type == Message.MessageType.Text &&
                 !string.IsNullOrEmpty(message.MediaType) &&
@@ -191,6 +203,11 @@ namespace Messenger_Meowtalk.Client.ViewModels
             return content.ToLower().EndsWith(".png") ||
                    content.ToLower().EndsWith(".jpg") ||
                    content.ToLower().EndsWith(".jpeg");
+        }
+        public void RefreshCommands()
+        {
+            (ClearChatHistoryCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            (SendMessageCommand as RelayCommand)?.RaiseCanExecuteChanged();
         }
         private void HandleChatCreationMessage(Message message)
         {
@@ -493,6 +510,111 @@ namespace Messenger_Meowtalk.Client.ViewModels
         public void UpdateWindowFocusState(bool isFocused)
         {
             _notificationService.SetWindowFocusState(isFocused);
+        }
+        private bool CanClearChatHistory()
+        {
+            return SelectedChat != null && SelectedChat.Messages.Any();
+        }
+
+        private async Task ClearChatHistoryAsync()
+        {
+            if (SelectedChat == null) return;
+
+            var result = MessageBox.Show(
+                $"Вы уверены, что хотите очистить историю чата \"{SelectedChat.Name}\"?\n\nЭто действие нельзя отменить!",
+                "Подтверждение очистки",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    // Сначала очищаем историю в базе данных через сервис
+                    await _chatService.ClearChatHistoryAsync(SelectedChat.ChatId);
+
+                    // Отправляем специальное системное сообщение для синхронизации
+                    var syncMessage = new Message
+                    {
+                        Sender = CurrentUser.Username,
+                        Content = "sync_clear_chat_history",
+                        Type = Message.MessageType.System,
+                        Timestamp = DateTime.Now,
+                        ChatId = SelectedChat.ChatId,
+                        IsMyMessage = true
+                    };
+
+                    await _chatService.SendMessageAsync(syncMessage);
+
+                    // Очищаем локальные сообщения
+                    SelectedChat.Messages.Clear();
+
+                    // Добавляем системное сообщение об очистке
+                    SelectedChat.Messages.Add(new Message
+                    {
+                        Sender = "System",
+                        Content = $"{CurrentUser.Username} очистил историю чата",
+                        Type = Message.MessageType.System,
+                        Timestamp = DateTime.Now,
+                        IsMyMessage = false,
+                        ChatId = SelectedChat.ChatId
+                    });
+
+                    // Обновляем отображение
+                    SelectedChat.RefreshLastMessageProperties();
+                    OnPropertyChanged(nameof(SelectedChat));
+
+                    MessageReceived?.Invoke(this, EventArgs.Empty);
+
+                    MessageBox.Show(
+                        "История чата успешно очищена",
+                        "Очистка завершена",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Ошибка при очистке истории: {ex.Message}",
+                        "Ошибка",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            }
+
+        }
+        private void HandleSyncClearChatHistory(Message message)
+        {
+            var chat = Chats.FirstOrDefault(c => c.ChatId == message.ChatId);
+            if (chat == null) return;
+
+            // Очищаем локальные сообщения
+            chat.Messages.Clear();
+
+            // Добавляем системное сообщение об очистке
+            chat.Messages.Add(new Message
+            {
+                Sender = "System",
+                Content = $"{message.Sender} очистил историю чата",
+                Type = Message.MessageType.System,
+                Timestamp = DateTime.Now,
+                IsMyMessage = false,
+                ChatId = message.ChatId
+            });
+
+            // Обновляем отображение
+            chat.RefreshLastMessageProperties();
+
+            if (chat == SelectedChat)
+            {
+                OnPropertyChanged(nameof(SelectedChat));
+                MessageReceived?.Invoke(this, EventArgs.Empty);
+            }
+
+            // Показываем уведомление
+            _notificationService.ShowMessageNotification("System",
+                $"{message.Sender} очистил историю чата",
+                chat.Name);
         }
     }
 }

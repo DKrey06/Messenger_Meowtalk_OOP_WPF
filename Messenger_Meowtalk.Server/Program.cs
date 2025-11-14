@@ -113,6 +113,12 @@ namespace Messenger_MeowtalkServer
 
                         if (message != null)
                         {
+                            if (message.Type == Message.MessageType.System && message.Content == "clear_chat_history")
+                            {
+                                await HandleClearChatHistory(message.ChatId, message.Sender);
+                                continue; 
+                            }
+
                             if (message.Type == Message.MessageType.System && message.Content.Contains("создал чат"))
                             {
                                 await HandleChatCreation(message.ChatId, message.Sender);
@@ -414,6 +420,38 @@ namespace Messenger_MeowtalkServer
             }
         }
 
+        // В класс Program добавить метод
+
+        private static async Task HandleClearChatHistory(string chatId, string username)
+        {
+            try
+            {
+                var messageService = new MessageService(_dbContext, new EncryptionService());
+                var success = await messageService.ClearChatHistoryAsync(chatId);
+
+                if (success)
+                {
+                    Console.WriteLine($"Пользователь {username} очистил историю чата {chatId}");
+
+                    // Отправляем сообщение синхронизации всем клиентам
+                    var syncMessage = new Message
+                    {
+                        Sender = username,
+                        Content = "sync_clear_chat_history",
+                        Type = Message.MessageType.System,
+                        ChatId = chatId,
+                        Timestamp = DateTime.Now
+                    };
+
+                    var messageJson = JsonSerializer.Serialize(syncMessage);
+                    await BroadcastMessage(messageJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка очистки истории чата {chatId}: {ex.Message}");
+            }
+        }
         private static async Task CreateUserChatRelationshipsForNewChat(string chatId)
         {
             try

@@ -20,7 +20,7 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-
+            
             <!--Верхняя панелька с лого-->
             <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" Padding="20">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -206,7 +206,17 @@
                     </StackPanel>
 
                     <!--Кнопка информации о чате-->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                     <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <Button Content="🗑️" 
+                                Background="Transparent" 
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                ToolTip="Очистить историю чата"
+                                FontSize="{StaticResource FontSizeMedium}"
+                                Foreground="White"
+                                Command="{Binding ClearChatHistoryCommand}"
+                                Margin="0,0,10,0"/>
+
                         <Button Content="ⓘ" 
                                 Background="Transparent" 
                                 BorderThickness="0"

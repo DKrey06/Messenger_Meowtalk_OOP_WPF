@@ -152,5 +152,42 @@ namespace Messenger_Meowtalk.Server.Services
                 throw;
             }
         }
+        public async Task<bool> ClearChatHistoryAsync(string chatId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // Удаляем зашифрованные сообщения (кроме системных)
+                var messagesToDelete = await _context.Messages
+                    .Where(m => m.ChatId == chatId && m.Type != Message.MessageType.System)
+                    .Select(m => m.Id)
+                    .ToListAsync();
+
+                var encryptedMessages = await _context.EncryptedMessages
+                    .Where(em => messagesToDelete.Contains(em.MessageId))
+                    .ToListAsync();
+
+                _context.EncryptedMessages.RemoveRange(encryptedMessages);
+                await _context.SaveChangesAsync();
+
+                // Удаляем сами сообщения (кроме системных)
+                var messages = await _context.Messages
+                    .Where(m => m.ChatId == chatId && m.Type != Message.MessageType.System)
+                    .ToListAsync();
+
+                _context.Messages.RemoveRange(messages);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                Console.WriteLine($"Ошибка очистки истории чата {chatId}: {ex.Message}");
+                return false;
+            }
+        }
     }
 }

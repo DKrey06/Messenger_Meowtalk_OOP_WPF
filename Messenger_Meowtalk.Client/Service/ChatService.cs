@@ -1,96 +1,196 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
+﻿using Messenger_Meowtalk.Shared.Models;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net.WebSockets;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
-using Messenger_Meowtalk.Shared.Models;
 
 namespace Messenger_Meowtalk.Client.Services
 {
     public class ChatService
     {
-        private readonly WebSocketService _webSocketService;
-        private User _currentUser;
+        private ClientWebSocket _webSocket;
+        private string _currentUser;
+        private readonly Uri _serverUri;
 
-        public ObservableCollection<Chat> Chats { get; } = new();
         public event Action<Message> MessageReceived;
         public event Action<string> ConnectionStatusChanged;
 
         public ChatService()
         {
-            _webSocketService = new WebSocketService();
-            _webSocketService.MessageReceived += OnMessageReceived;
-            _webSocketService.ConnectionStatusChanged += OnConnectionStatusChanged;
+            _serverUri = new Uri("ws://localhost:8000/");
         }
 
         public async Task ConnectAsync(string username)
         {
-            _currentUser = new User
+            try
             {
-                Username = username,
-                UserId = Guid.NewGuid().ToString(),
-                IsOnline = true,
-                Status = "В сети"
-            };
+                _currentUser = username;
 
-            await _webSocketService.ConnectAsync(username);
-        }
+                _webSocket = new ClientWebSocket();
+                await _webSocket.ConnectAsync(_serverUri, CancellationToken.None);
 
-        private void OnMessageReceived(Message message)
-        {
-            var chat = FindOrCreateChat(message.ChatId, message.Sender);
-            message.IsMyMessage = message.Sender == _currentUser.Username;
-            MessageReceived?.Invoke(message);
-        }
+                ConnectionStatusChanged?.Invoke("Подключено");
 
-        private Chat FindOrCreateChat(string chatId, string senderName)
-        {
-            var chat = Chats.FirstOrDefault(c => c.ChatId == chatId);
-            if (chat == null && !string.IsNullOrEmpty(senderName))
-            {
-                chat = new Chat
+                // Отправляем системное сообщение о подключении
+                var joinMessage = new Message
                 {
-                    ChatId = chatId ?? $"private_{senderName}",
-                    Name = senderName == _currentUser.Username ? "Избранное" : senderName
+                    Sender = username,
+                    Content = $"{username} присоединился",
+                    Type = Message.MessageType.System,
+                    Timestamp = DateTime.Now,
+                    ChatId = "general"
                 };
 
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    Chats.Add(chat);
-                });
+                await SendMessageAsync(joinMessage);
+
+                // Запускаем прослушивание сообщений
+                _ = Task.Run(ListenForMessages);
             }
-            return chat;
+            catch (Exception ex)
+            {
+                ConnectionStatusChanged?.Invoke($"Ошибка подключения: {ex.Message}");
+                Debug.WriteLine($"Ошибка подключения: {ex.Message}");
+            }
         }
 
-        private void OnConnectionStatusChanged(string status)
+        public async Task SendMessageAsync(string content, string chatId)
         {
-            ConnectionStatusChanged?.Invoke(status);
-        }
-
-        public async Task SendMessageAsync(string content, string chatId = "general")
-        {
-            if (string.IsNullOrWhiteSpace(content)) return;
-
             var message = new Message
             {
-                Sender = _currentUser.Username,
-                Content = content.Trim(),
-                Timestamp = DateTime.Now,
+                Sender = _currentUser,
+                Content = content,
                 ChatId = chatId,
-                Type = Message.MessageType.Text
+                Timestamp = DateTime.Now,
+                Type = Message.MessageType.Text,
+                IsMyMessage = true
             };
 
-            await _webSocketService.SendMessageAsync(message);
+            await SendMessageAsync(message);
         }
 
         public async Task SendMessageAsync(Message message)
         {
-            if (message == null || string.IsNullOrWhiteSpace(message.Content)) return;
-            await _webSocketService.SendMessageAsync(message);
+            try
+            {
+                if (_webSocket?.State == WebSocketState.Open)
+                {
+                    var messageJson = JsonSerializer.Serialize(message);
+                    var buffer = Encoding.UTF8.GetBytes(messageJson);
+
+                    await _webSocket.SendAsync(
+                        new ArraySegment<byte>(buffer),
+                        WebSocketMessageType.Text,
+                        true,
+                        CancellationToken.None);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка отправки сообщения: {ex.Message}");
+            }
+        }
+
+        private async Task ListenForMessages()
+        {
+            var buffer = new byte[4096];
+
+            try
+            {
+                while (_webSocket?.State == WebSocketState.Open)
+                {
+                    var result = await _webSocket.ReceiveAsync(
+                        new ArraySegment<byte>(buffer),
+                        CancellationToken.None);
+
+                    if (result.MessageType == WebSocketMessageType.Text)
+                    {
+                        var messageJson = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                        var message = JsonSerializer.Deserialize<Message>(messageJson);
+
+                        if (message != null)
+                        {
+                            // Устанавливаем флаг IsMyMessage
+                            message.IsMyMessage = message.Sender == _currentUser;
+                            MessageReceived?.Invoke(message);
+                        }
+                    }
+                    else if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        await _webSocket.CloseAsync(
+                            WebSocketCloseStatus.NormalClosure,
+                            "",
+                            CancellationToken.None);
+                        ConnectionStatusChanged?.Invoke("Отключено");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ConnectionStatusChanged?.Invoke($"Ошибка соединения: {ex.Message}");
+                Debug.WriteLine($"Ошибка прослушивания: {ex.Message}");
+            }
         }
 
         public async Task DisconnectAsync()
         {
-            await _webSocketService.DisconnectAsync(_currentUser.Username);
+            try
+            {
+                if (_webSocket?.State == WebSocketState.Open)
+                {
+                    // Отправляем сообщение о выходе
+                    var leaveMessage = new Message
+                    {
+                        Sender = _currentUser,
+                        Content = $"{_currentUser} покинул чат",
+                        Type = Message.MessageType.System,
+                        Timestamp = DateTime.Now,
+                        ChatId = "general"
+                    };
+
+                    await SendMessageAsync(leaveMessage);
+
+                    await _webSocket.CloseAsync(
+                        WebSocketCloseStatus.NormalClosure,
+                        "",
+                        CancellationToken.None);
+                }
+
+                _webSocket?.Dispose();
+                _webSocket = null;
+                ConnectionStatusChanged?.Invoke("Отключено");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка отключения: {ex.Message}");
+            }
+        }
+
+        public async Task<bool> ClearChatHistoryAsync(string chatId)
+        {
+            try
+            {
+                // Отправляем запрос на сервер для очистки истории
+                var clearMessage = new Message
+                {
+                    Type = Message.MessageType.System,
+                    Content = "clear_chat_history",
+                    ChatId = chatId,
+                    Sender = _currentUser,
+                    Timestamp = DateTime.Now
+                };
+
+                await SendMessageAsync(clearMessage);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка отправки запроса на очистку истории: {ex.Message}");
+                return false;
+            }
         }
     }
 }
