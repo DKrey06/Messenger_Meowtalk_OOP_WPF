@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Media;
 using System.Windows;
-using System.Windows.Threading;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace Messenger_Meowtalk.Client.Services
 {
@@ -96,11 +96,10 @@ namespace Messenger_Meowtalk.Client.Services
             _notificationWindow.Opacity = 0;
             _notificationWindow.Show();
 
-            var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(1,
-                TimeSpan.FromSeconds(0.3));
+            var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(1, TimeSpan.FromSeconds(0.3));
             _notificationWindow.BeginAnimation(Window.OpacityProperty, fadeIn);
 
-            //Автоматическое закрытие через 4 секунды
+            //Автоматическое закрытие сообщения через 4 секунды
             var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
             timer.Tick += (s, e) =>
             {
@@ -124,8 +123,7 @@ namespace Messenger_Meowtalk.Client.Services
         {
             if (_notificationWindow != null)
             {
-                var fadeOut = new System.Windows.Media.Animation.DoubleAnimation(0,
-                    TimeSpan.FromSeconds(0.3));
+                var fadeOut = new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromSeconds(0.3));
                 fadeOut.Completed += (s, e) => _notificationWindow.Close();
                 _notificationWindow.BeginAnimation(Window.OpacityProperty, fadeOut);
             }

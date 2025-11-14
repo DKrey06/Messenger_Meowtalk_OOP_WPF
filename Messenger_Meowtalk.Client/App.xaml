@@ -12,8 +12,6 @@
                 <ResourceDictionary Source="/Assets/Styles/Controls.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            
-            
             <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
             <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <local:MessageBackgroundConverter x:Key="MessageBackgroundConverter"/>
@@ -22,7 +20,6 @@
             <local:StickerImageConverter x:Key="StickerImageConverter"/>
             <local:StickerVisibilityConverter x:Key="StickerVisibilityConverter"/>
             <local:TextMessageVisibilityConverter x:Key="TextMessageVisibilityConverter"/>
-            
         </ResourceDictionary>
     </Application.Resources>
 </Application>

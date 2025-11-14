@@ -28,10 +28,9 @@ namespace Messenger_Meowtalk.Client.Services
             try
             {
                 _currentUser = username;
-
                 _webSocket = new ClientWebSocket();
-                await _webSocket.ConnectAsync(_serverUri, CancellationToken.None);
 
+                await _webSocket.ConnectAsync(_serverUri, CancellationToken.None);
                 ConnectionStatusChanged?.Invoke("Подключено");
 
                 var joinMessage = new Message
@@ -44,7 +43,6 @@ namespace Messenger_Meowtalk.Client.Services
                 };
 
                 await SendMessageAsync(joinMessage);
-
                 _ = Task.Run(ListenForMessages);
             }
             catch (Exception ex)
@@ -102,7 +100,7 @@ namespace Messenger_Meowtalk.Client.Services
                     ChatId = message.ChatId,
                     Sender = _currentUser,
                     Timestamp = DateTime.Now,
-                    OriginalContent = message.Content, // Передаем новое содержимое
+                    OriginalContent = message.Content,
                     IsEdited = message.IsEdited,
                     EditedTimestamp = message.EditedTimestamp
                 };

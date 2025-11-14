@@ -154,7 +154,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private void ProcessIncomingMessage(Message message)
         {
-            // Обработка синхронизации редактирования сообщения
             if (message.Type == Message.MessageType.System && message.Content.StartsWith("sync_edit_message:"))
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -164,7 +163,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 return;
             }
 
-            // Обработка синхронизации удаления сообщения
             if (message.Type == Message.MessageType.System && message.Content.StartsWith("sync_delete_message:"))
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -174,7 +172,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 return;
             }
 
-            // Обработка синхронизации очистки истории
             if (message.Type == Message.MessageType.System && message.Content == "sync_clear_chat_history")
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -184,7 +181,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 return;
             }
 
-            // Если это сохраненный стикер из базы, восстанавливаем тип
             if (message.Type == Message.MessageType.Text &&
                 !string.IsNullOrEmpty(message.MediaType) &&
                 message.MediaType == "image")
@@ -248,15 +244,13 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 var messageToUpdate = chat.Messages.FirstOrDefault(m => m.Id == messageId);
                 if (messageToUpdate != null)
                 {
-                    // Сохраняем ссылку на старое сообщение
                     var oldMessage = messageToUpdate;
 
-                    // Создаем новое сообщение с обновленными данными
                     var updatedMessage = new Message
                     {
                         Id = oldMessage.Id,
                         Sender = oldMessage.Sender,
-                        Content = syncMessage.OriginalContent, // Новое содержимое
+                        Content = syncMessage.OriginalContent,
                         ChatId = oldMessage.ChatId,
                         Timestamp = oldMessage.Timestamp,
                         Type = oldMessage.Type,
@@ -267,17 +261,14 @@ namespace Messenger_Meowtalk.Client.ViewModels
                         MediaType = oldMessage.MediaType
                     };
 
-                    // Заменяем сообщение в коллекции
                     var index = chat.Messages.IndexOf(oldMessage);
                     if (index >= 0)
                     {
                         chat.Messages[index] = updatedMessage;
                     }
 
-                    // Принудительно обновляем UI
                     OnPropertyChanged(nameof(SelectedChat));
 
-                    // Обновляем коллекцию сообщений
                     chat.RefreshLastMessageProperties();
 
                     if (!syncMessage.IsMyMessage)
@@ -497,30 +488,24 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
             try
             {
-                // Сохраняем оригинальное содержимое при первом редактировании
                 if (!EditingMessage.IsEdited)
                 {
                     EditingMessage.OriginalContent = EditingMessage.Content;
                 }
 
-                // Обновляем сообщение
                 EditingMessage.Content = newContent;
                 EditingMessage.IsEdited = true;
                 EditingMessage.EditedTimestamp = DateTime.Now;
 
-                // Отправляем синхронизацию через WebSocket
                 await _chatService.EditMessageAsync(EditingMessage);
 
-                // Очищаем и выходим из режима редактирования
                 MessageText = string.Empty;
                 IsEditingMode = false;
                 EditingMessage = null;
 
-                // Обновляем UI
                 OnPropertyChanged(nameof(SelectedChat));
                 MessageReceived?.Invoke(this, EventArgs.Empty);
 
-                // Фокусируемся на поле ввода
                 MessageTextBox_Focus();
             }
             catch (Exception ex)
@@ -566,10 +551,8 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 try
                 {
-                    // Отправляем запрос на удаление через WebSocket
                     await _chatService.DeleteMessageAsync(message);
 
-                    // Удаляем сообщение из локальной коллекции
                     var chat = Chats.FirstOrDefault(c => c.ChatId == message.ChatId);
                     if (chat != null)
                     {
@@ -577,11 +560,9 @@ namespace Messenger_Meowtalk.Client.ViewModels
                         chat.RefreshLastMessageProperties();
                         OnPropertyChanged(nameof(SelectedChat));
 
-                        // Обновляем UI
                         MessageReceived?.Invoke(this, EventArgs.Empty);
                     }
 
-                    // Показываем уведомление об успешном удалении
                     MessageBox.Show(
                         "Сообщение успешно удалено",
                         "Удаление завершено",

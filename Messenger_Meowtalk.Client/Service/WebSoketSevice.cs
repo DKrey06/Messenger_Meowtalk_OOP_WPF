@@ -12,6 +12,7 @@ namespace Messenger_Meowtalk.Client.Services
     {
         private ClientWebSocket _webSocket;
         private readonly string _serverUrl = "ws://localhost:8000/";
+
         public event Action<Message> MessageReceived;
         public event Action<string> ConnectionStatusChanged;
 
@@ -32,8 +33,8 @@ namespace Messenger_Meowtalk.Client.Services
                     Content = $"{username} присоединился к чату",
                     Type = Message.MessageType.System
                 };
-                await SendMessageAsync(connectMessage);
 
+                await SendMessageAsync(connectMessage);
                 _ = Task.Run(ReceiveMessages);
             }
             catch (Exception ex)
@@ -50,8 +51,12 @@ namespace Messenger_Meowtalk.Client.Services
                 {
                     var json = JsonSerializer.Serialize(message);
                     var buffer = Encoding.UTF8.GetBytes(json);
-                    await _webSocket.SendAsync(new ArraySegment<byte>(buffer),
-                        WebSocketMessageType.Text, true, CancellationToken.None);
+
+                    await _webSocket.SendAsync(
+                        new ArraySegment<byte>(buffer),
+                        WebSocketMessageType.Text,
+                        true,
+                        CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
@@ -67,12 +72,14 @@ namespace Messenger_Meowtalk.Client.Services
         private async Task ReceiveMessages()
         {
             var buffer = new byte[4096];
+
             try
             {
                 while (_webSocket?.State == WebSocketState.Open)
                 {
                     var result = await _webSocket.ReceiveAsync(
-                        new ArraySegment<byte>(buffer), CancellationToken.None);
+                        new ArraySegment<byte>(buffer),
+                        CancellationToken.None);
 
                     if (result.MessageType == WebSocketMessageType.Text)
                     {
@@ -86,8 +93,10 @@ namespace Messenger_Meowtalk.Client.Services
                     }
                     else if (result.MessageType == WebSocketMessageType.Close)
                     {
-                        await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure,
-                            "", CancellationToken.None);
+                        await _webSocket.CloseAsync(
+                            WebSocketCloseStatus.NormalClosure,
+                            "",
+                            CancellationToken.None);
                         ConnectionStatusChanged?.Invoke("🔌 Отключено от сервера");
                     }
                 }
@@ -114,10 +123,13 @@ namespace Messenger_Meowtalk.Client.Services
                         Content = $"{username} покинул чат",
                         Type = Message.MessageType.System
                     };
+
                     await SendMessageAsync(disconnectMessage);
 
-                    await _webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure,
-                        "", CancellationToken.None);
+                    await _webSocket.CloseAsync(
+                        WebSocketCloseStatus.NormalClosure,
+                        "",
+                        CancellationToken.None);
                 }
                 catch (Exception ex)
                 {

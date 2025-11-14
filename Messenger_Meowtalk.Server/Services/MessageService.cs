@@ -20,12 +20,11 @@ namespace Messenger_Meowtalk.Server.Services
         {
             try
             {
-                // Сохраняем в основную таблицу Messages
                 var messageToSave = new Message
                 {
                     Id = message.Id ?? Guid.NewGuid().ToString(),
                     Sender = message.Sender,
-                    Content = message.Content, // Сохраняем оригинальное содержимое
+                    Content = message.Content,
                     ChatId = message.ChatId,
                     Timestamp = message.Timestamp,
                     Type = message.Type,
@@ -37,7 +36,6 @@ namespace Messenger_Meowtalk.Server.Services
 
                 _context.Messages.Add(messageToSave);
 
-                // ДОПОЛНИТЕЛЬНО сохраняем в EncryptedMessages для каждого участника
                 foreach (var participantId in participantIds)
                 {
                     if (_encryptionService.HasKeyForUser(participantId))
@@ -71,7 +69,6 @@ namespace Messenger_Meowtalk.Server.Services
         {
             try
             {
-                // ЗАГРУЖАЕМ ИЗ ОСНОВНОЙ ТАБЛИЦЫ Messages
                 var messages = await _context.Messages
                     .Where(m => m.ChatId == chatId)
                     .OrderBy(m => m.Timestamp)
@@ -85,7 +82,7 @@ namespace Messenger_Meowtalk.Server.Services
                     {
                         Id = message.Id,
                         Sender = message.Sender,
-                        Content = message.Content, // Берем содержимое напрямую из Messages
+                        Content = message.Content,
                         ChatId = message.ChatId,
                         Timestamp = message.Timestamp,
                         Type = message.Type,
@@ -107,13 +104,13 @@ namespace Messenger_Meowtalk.Server.Services
                 return new List<Message>();
             }
         }
+
         public async Task<bool> ClearChatHistoryAsync(string chatId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // Удаляем зашифрованные сообщения (кроме системных)
                 var messagesToDelete = await _context.Messages
                     .Where(m => m.ChatId == chatId && m.Type != Message.MessageType.System)
                     .Select(m => m.Id)
@@ -126,7 +123,6 @@ namespace Messenger_Meowtalk.Server.Services
                 _context.EncryptedMessages.RemoveRange(encryptedMessages);
                 await _context.SaveChangesAsync();
 
-                // Удаляем сами сообщения (кроме системных)
                 var messages = await _context.Messages
                     .Where(m => m.ChatId == chatId && m.Type != Message.MessageType.System)
                     .ToListAsync();
@@ -144,11 +140,11 @@ namespace Messenger_Meowtalk.Server.Services
                 return false;
             }
         }
+
         public async Task<bool> UpdateMessageAsync(Message message, List<string> participantIds)
         {
             try
             {
-                // Находим сообщение в базе
                 var existingMessage = await _context.Messages
                     .FirstOrDefaultAsync(m => m.Id == message.Id)
                     ?? await _context.Messages
@@ -165,33 +161,27 @@ namespace Messenger_Meowtalk.Server.Services
 
                 Console.WriteLine($"Обновление сообщения: ID={existingMessage.Id}, OldContent={existingMessage.Content}");
 
-                // ОБНОВЛЯЕМ ОСНОВНУЮ ТАБЛИЦУ Messages
-                existingMessage.Content = message.Content; // Обновляем содержимое напрямую
+                existingMessage.Content = message.Content;
                 existingMessage.IsEdited = message.IsEdited;
                 existingMessage.EditedTimestamp = message.EditedTimestamp;
 
-                // ОБНОВЛЯЕМ ТАБЛИЦУ EncryptedMessages ДЛЯ ВСЕХ УЧАСТНИКОВ
                 foreach (var participantId in participantIds)
                 {
                     if (_encryptionService.HasKeyForUser(participantId))
                     {
-                        // Шифруем новое содержимое
                         var (encryptedData, iv) = _encryptionService.EncryptMessage(message.Content, participantId);
 
-                        // Находим запись в EncryptedMessages
                         var encryptedMessage = await _context.EncryptedMessages
                             .FirstOrDefaultAsync(em => em.MessageId == existingMessage.Id && em.UserId == participantId);
 
                         if (encryptedMessage != null)
                         {
-                            // Обновляем существующую запись
                             encryptedMessage.EncryptedContent = encryptedData;
                             encryptedMessage.IV = iv;
                             Console.WriteLine($"Обновлено EncryptedMessage для пользователя {participantId}");
                         }
                         else
                         {
-                            // Создаем новую запись если не найдена
                             encryptedMessage = new EncryptedMessage
                             {
                                 MessageId = existingMessage.Id,
@@ -219,24 +209,22 @@ namespace Messenger_Meowtalk.Server.Services
                 return false;
             }
         }
+
         public async Task<bool> DeleteMessageAsync(string messageId)
         {
             try
             {
-                // Находим сообщение в базе
                 var message = await _context.Messages
                     .FirstOrDefaultAsync(m => m.Id == messageId);
 
                 if (message == null) return false;
 
-                // Удаляем все связанные записи в EncryptedMessages
                 var encryptedMessages = await _context.EncryptedMessages
                     .Where(em => em.MessageId == messageId)
                     .ToListAsync();
 
                 _context.EncryptedMessages.RemoveRange(encryptedMessages);
 
-                // Удаляем само сообщение
                 _context.Messages.Remove(message);
 
                 await _context.SaveChangesAsync();
@@ -248,11 +236,11 @@ namespace Messenger_Meowtalk.Server.Services
                 return false;
             }
         }
+
         public async Task MigrateExistingMessagesToEncrypted()
         {
             try
             {
-                // Получаем все сообщения, которые еще не имеют записей в EncryptedMessages
                 var messagesWithoutEncryption = await _context.Messages
                     .Where(m => !_context.EncryptedMessages.Any(em => em.MessageId == m.Id))
                     .ToListAsync();
@@ -261,7 +249,6 @@ namespace Messenger_Meowtalk.Server.Services
 
                 foreach (var message in messagesWithoutEncryption)
                 {
-                    // Получаем участников чата
                     var participantIds = await _context.UserChats
                         .Where(uc => uc.ChatId == message.ChatId)
                         .Select(uc => uc.UserId)
@@ -269,7 +256,6 @@ namespace Messenger_Meowtalk.Server.Services
 
                     if (!participantIds.Any()) continue;
 
-                    // Создаем записи EncryptedMessages для каждого участника
                     foreach (var participantId in participantIds)
                     {
                         if (!_encryptionService.HasKeyForUser(participantId))

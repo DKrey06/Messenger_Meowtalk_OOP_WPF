@@ -31,7 +31,9 @@ namespace Messenger_MeowtalkServer
             _messageService = new MessageService(_dbContext, encryptionService);
 
             await _dbContext.Database.EnsureCreatedAsync();
+            Console.WriteLine("Начало миграции");
             await _messageService.MigrateExistingMessagesToEncrypted();
+            Console.WriteLine("Конец миграции");
 
             await LoadConnectedUsersFromDatabase();
             await EnsureUserChatRelationships();
@@ -41,6 +43,7 @@ namespace Messenger_MeowtalkServer
 
             server.Prefixes.Add("http://localhost:8000/");
             server.Prefixes.Add($"http://{localIP}:8000/");
+            server.Prefixes.Add($"http://*:8000/");
 
             try
             {
@@ -116,7 +119,7 @@ namespace Messenger_MeowtalkServer
                             if (message.Type == Message.MessageType.System && message.Content == "clear_chat_history")
                             {
                                 await HandleClearChatHistory(message.ChatId, message.Sender);
-                                continue; 
+                                continue;
                             }
 
                             if (message.Type == Message.MessageType.System && message.Content.StartsWith("sync_edit_message:"))
@@ -124,6 +127,7 @@ namespace Messenger_MeowtalkServer
                                 await HandleSyncEditMessage(message);
                                 continue;
                             }
+
                             if (message.Type == Message.MessageType.System && message.Content.StartsWith("sync_delete_message:"))
                             {
                                 await HandleSyncDeleteMessage(message);
@@ -204,6 +208,8 @@ namespace Messenger_MeowtalkServer
                                         {
                                             await _messageService.SaveMessageAsync(message, participantIds);
                                         }
+                                        var userId = await SaveUserToDatabase(message.Sender);
+                                        await SendChatHistory(webSocket, message.ChatId, userId);
                                     }
                                     catch (Exception ex)
                                     {
@@ -431,8 +437,6 @@ namespace Messenger_MeowtalkServer
             }
         }
 
-        // В класс Program добавить метод
-
         private static async Task HandleClearChatHistory(string chatId, string username)
         {
             try
@@ -444,7 +448,6 @@ namespace Messenger_MeowtalkServer
                 {
                     Console.WriteLine($"Пользователь {username} очистил историю чата {chatId}");
 
-                    // Отправляем сообщение синхронизации всем клиентам
                     var syncMessage = new Message
                     {
                         Sender = username,
@@ -463,6 +466,7 @@ namespace Messenger_MeowtalkServer
                 Console.WriteLine($"Ошибка очистки истории чата {chatId}: {ex.Message}");
             }
         }
+
         private static async Task CreateUserChatRelationshipsForNewChat(string chatId)
         {
             try
@@ -516,7 +520,6 @@ namespace Messenger_MeowtalkServer
                 Console.WriteLine($"Обработка редактирования сообщения: {messageId} от пользователя {syncMessage.Sender}");
                 Console.WriteLine($"Новое содержание: {syncMessage.OriginalContent}");
 
-                // Получаем список участников чата
                 var participantIds = await _dbContext.UserChats
                     .Where(uc => uc.ChatId == syncMessage.ChatId)
                     .Select(uc => uc.UserId)
@@ -528,19 +531,17 @@ namespace Messenger_MeowtalkServer
                     participantIds = new List<string> { syncMessage.Sender };
                 }
 
-                // Создаем объект сообщения для обновления
                 var messageToUpdate = new Message
                 {
                     Id = messageId,
                     Sender = syncMessage.Sender,
-                    Content = syncMessage.OriginalContent, // Новое содержимое для Messages
+                    Content = syncMessage.OriginalContent,
                     ChatId = syncMessage.ChatId,
                     Timestamp = syncMessage.Timestamp,
                     IsEdited = syncMessage.IsEdited,
                     EditedTimestamp = syncMessage.EditedTimestamp
                 };
 
-                // Обновляем сообщение в обеих таблицах
                 var success = await _messageService.UpdateMessageAsync(messageToUpdate, participantIds);
 
                 if (success)
@@ -552,7 +553,6 @@ namespace Messenger_MeowtalkServer
                     Console.WriteLine($"Не удалось обновить сообщение {messageId}");
                 }
 
-                // Рассылаем синхронизацию всем клиентам
                 var messageJson = JsonSerializer.Serialize(syncMessage);
                 await BroadcastMessage(messageJson);
             }
@@ -562,14 +562,12 @@ namespace Messenger_MeowtalkServer
             }
         }
 
-
         private static async Task HandleSyncDeleteMessage(Message syncMessage)
         {
             try
             {
                 var messageId = syncMessage.Content.Replace("sync_delete_message:", "");
 
-                // Удаляем сообщение из базы данных
                 var success = await _messageService.DeleteMessageAsync(messageId);
 
                 if (success)
@@ -581,7 +579,6 @@ namespace Messenger_MeowtalkServer
                     Console.WriteLine($"Не удалось найти сообщение {messageId} для удаления");
                 }
 
-                // Рассылаем синхронизацию всем клиентам
                 var messageJson = JsonSerializer.Serialize(syncMessage);
                 await BroadcastMessage(messageJson);
             }
@@ -590,6 +587,7 @@ namespace Messenger_MeowtalkServer
                 Console.WriteLine($"Ошибка обработки удаления сообщения: {ex.Message}");
             }
         }
+
         private static async Task SyncConnectedUsersWithDatabase()
         {
             try

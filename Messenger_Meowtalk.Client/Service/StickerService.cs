@@ -45,8 +45,9 @@ namespace Messenger_Meowtalk.Client.Services
                         Code = Path.GetFileNameWithoutExtension(filePath),
                         Description = "Стикер",
                         IsSticker = true,
-                        ImagePath = relativePath 
+                        ImagePath = relativePath
                     };
+
                     GraphicStickers.Add(sticker);
                 }
             }

@@ -11,7 +11,6 @@ namespace Messenger_Meowtalk.Client.Converters
         {
             if (value is string content)
             {
-                // Обрабатываем как новые стикеры, так и сохраненные из базы
                 if (content.StartsWith("[STICKER_IMG]"))
                 {
                     var imagePath = content.Substring("[STICKER_IMG]".Length);
@@ -19,7 +18,6 @@ namespace Messenger_Meowtalk.Client.Converters
                 }
                 else if (content.EndsWith(".png") || content.EndsWith(".jpg") || content.EndsWith(".jpeg"))
                 {
-                    // Это сохраненный стикер из базы
                     return new BitmapImage(new Uri(content, UriKind.RelativeOrAbsolute));
                 }
             }

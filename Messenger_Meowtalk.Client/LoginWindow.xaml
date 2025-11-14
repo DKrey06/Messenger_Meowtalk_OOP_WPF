@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MeowTalk - Вход" 
-        Height="500" Width="400"
+        Height="500" 
+        Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="{StaticResource BackgroundBrush}">
@@ -14,9 +15,13 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!--Лого с котиком-КАРТИНКА-->
-        <StackPanel Grid.Row="0" Margin="40" HorizontalAlignment="Center">
-            <Image Source="/Assets/Images/logo.png" Height="80" Width="80"/>
+        <!-- Лого с котиком -->
+        <StackPanel Grid.Row="0" 
+                    Margin="40" 
+                    HorizontalAlignment="Center">
+            <Image Source="/Assets/Images/logo.png" 
+                   Height="80" 
+                   Width="80"/>
             <TextBlock Text="MeowTalk" 
                        FontSize="{StaticResource FontSizeXXLarge}" 
                        FontWeight="Bold"
@@ -25,8 +30,10 @@
                        Margin="0,10,0,0"/>
         </StackPanel>
 
-        <!--Форма для входа-->
-        <StackPanel Grid.Row="1" Margin="40,0" VerticalAlignment="Center">
+        <!-- Форма для входа -->
+        <StackPanel Grid.Row="1" 
+                    Margin="40,0" 
+                    VerticalAlignment="Center">
             <TextBlock Text="Войти в MeowTalk" 
                        FontSize="20"
                        FontWeight="SemiBold"
@@ -39,7 +46,7 @@
                        Foreground="{StaticResource TextSecondaryBrush}"
                        Margin="0,0,0,5"/>
 
-            <!--Поле ввода-->
+            <!-- Поле ввода -->
             <TextBox x:Name="UsernameTextBox" 
                      Height="40" 
                      FontSize="16"
@@ -61,8 +68,10 @@
                     Click="LoginButton_Click"/>
         </StackPanel>
 
-        <!--Нижняя панелька-->
-        <Border Grid.Row="2" Background="White" Padding="20">
+        <!-- Нижняя панелька -->
+        <Border Grid.Row="2" 
+                Background="White" 
+                Padding="20">
             <TextBlock Text="Простой и удобный мессенджер для общения" 
                        FontSize="12"
                        Foreground="{StaticResource TextSecondaryBrush}"

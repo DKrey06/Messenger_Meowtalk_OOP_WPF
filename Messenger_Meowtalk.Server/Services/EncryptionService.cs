@@ -53,6 +53,7 @@ namespace Messenger_Meowtalk.Server.Services
         }
 
         public bool HasKeyForUser(string userId) => _userKeys.ContainsKey(userId);
+
         public void RemoveUserKey(string userId) => _userKeys.Remove(userId);
     }
 }

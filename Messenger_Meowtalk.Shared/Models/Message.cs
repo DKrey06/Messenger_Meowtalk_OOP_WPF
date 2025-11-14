@@ -18,6 +18,7 @@ namespace Messenger_Meowtalk.Shared.Models
 
         [NotMapped]
         public bool IsMyMessage { get; set; }
+
         [NotMapped]
         public bool ShowSender { get; set; } = true;
 

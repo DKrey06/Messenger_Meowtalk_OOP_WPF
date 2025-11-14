@@ -19,7 +19,6 @@ namespace Messenger_Meowtalk.Client
             _viewModel.MessageReceived += OnMessageReceived;
             _viewModel.ChatSelected += OnChatSelected;
 
-            // Подписываемся на события окна
             Activated += MainWindow_Activated;
             Deactivated += MainWindow_Deactivated;
             StateChanged += MainWindow_StateChanged;
@@ -28,6 +27,7 @@ namespace Messenger_Meowtalk.Client
             Loaded += MainWindow_Loaded;
             Closing += MainWindow_Closing;
         }
+
         private void MainWindow_Activated(object sender, EventArgs e)
         {
             _viewModel.UpdateWindowFocusState(true);
@@ -48,6 +48,7 @@ namespace Messenger_Meowtalk.Client
         {
             _viewModel.UpdateWindowFocusState(this.IsActive);
         }
+
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             MessageTextBox.Focus();
@@ -107,11 +108,6 @@ namespace Messenger_Meowtalk.Client
             _viewModel.OpenSettingsCommand?.Execute(null);
         }
 
-        //private void EmojiButton_Click(object sender, RoutedEventArgs e)
-        //{
-        //    _viewModel.MessageText += "😊 ";
-        //    MessageTextBox.Focus();
-        //}
         public void FocusMessageTextBoxAndSetCursorToEnd()
         {
             MessageTextBox?.Focus();
@@ -160,6 +156,7 @@ namespace Messenger_Meowtalk.Client
                 MessageTextBox.CaretIndex = MessageTextBox.Text.Length;
             }
         }
+
         private void EditMenuItem_Click(object sender, RoutedEventArgs e)
         {
             if (sender is MenuItem menuItem && menuItem.DataContext is Message message)

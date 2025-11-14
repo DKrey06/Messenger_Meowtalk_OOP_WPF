@@ -38,6 +38,7 @@ namespace Messenger_Meowtalk.Client
                               MessageBoxImage.Warning);
                 return;
             }
+
             var user = new User
             {
                 Username = username,
@@ -45,6 +46,7 @@ namespace Messenger_Meowtalk.Client
                 IsOnline = true,
                 Status = "В сети"
             };
+
             var mainWindow = new MainWindow(user);
             mainWindow.Show();
             this.Close();
