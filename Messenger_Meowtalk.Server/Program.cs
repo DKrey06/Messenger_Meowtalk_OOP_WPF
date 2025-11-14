@@ -30,6 +30,7 @@ namespace Messenger_MeowtalkServer
             var encryptionService = new EncryptionService();
             _messageService = new MessageService(_dbContext, encryptionService);
 
+            await _dbContext.Database.EnsureDeletedAsync();//Удаление а затем создание базы данных (эту строку потом удалить в конце
             await _dbContext.Database.EnsureCreatedAsync();
 
             await LoadConnectedUsersFromDatabase();
@@ -166,7 +167,7 @@ namespace Messenger_MeowtalkServer
                             }
                             else
                             {
-                                if (message.Type == Message.MessageType.Text)
+                                if (message.Type == Message.MessageType.Text || message.Type == Message.MessageType.Sticker)
                                 {
                                     try
                                     {
