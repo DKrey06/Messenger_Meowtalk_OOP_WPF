@@ -18,6 +18,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
         private string _connectionStatus;
         private bool _isEmojiPanelOpen;
         private readonly ChatService _chatService;
+        private readonly NotificationService _notificationService;
 
         public User CurrentUser { get; }
         public ObservableCollection<Chat> Chats { get; }
@@ -27,6 +28,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
         public event EventHandler MessageReceived;
         public event EventHandler ChatSelected;
         public event EventHandler<string> ConnectionStatusChanged;
+
 
         public Chat SelectedChat
         {
@@ -77,6 +79,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
             CurrentUser = currentUser;
             Chats = new ObservableCollection<Chat>();
             _chatService = new ChatService();
+            _notificationService = new NotificationService();
             ConnectionStatus = "Подключение...";
 
             _chatService.MessageReceived += OnMessageReceivedFromService;
@@ -124,6 +127,12 @@ namespace Messenger_Meowtalk.Client.ViewModels
             if (!chat.Messages.Any(m => m.Id == message.Id && message.Id != "0"))
             {
                 chat.Messages.Add(message);
+
+                // Показываем уведомление для новых сообщений (кроме своих)
+                if (!message.IsMyMessage && message.Type == Message.MessageType.Text)
+                {
+                    _notificationService.ShowMessageNotification(message.Sender, message.Content, chat.Name);
+                }
             }
 
             chat.RefreshLastMessageProperties();
@@ -409,6 +418,10 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 _chatService.ConnectionStatusChanged -= OnConnectionStatusChangedFromService;
             }
             Chats.Clear();
+        }
+        public void UpdateWindowFocusState(bool isFocused)
+        {
+            _notificationService.SetWindowFocusState(isFocused);
         }
     }
 }

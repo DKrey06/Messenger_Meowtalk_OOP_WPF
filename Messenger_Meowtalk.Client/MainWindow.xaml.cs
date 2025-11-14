@@ -19,10 +19,36 @@ namespace Messenger_Meowtalk.Client
             _viewModel.MessageReceived += OnMessageReceived;
             _viewModel.ChatSelected += OnChatSelected;
 
+            // Подписываемся на события окна
+            Activated += MainWindow_Activated;
+            Deactivated += MainWindow_Deactivated;
+            StateChanged += MainWindow_StateChanged;
+            LocationChanged += MainWindow_LocationChanged;
+
             Loaded += MainWindow_Loaded;
             Closing += MainWindow_Closing;
         }
+        private void MainWindow_Activated(object sender, EventArgs e)
+        {
+            _viewModel.UpdateWindowFocusState(true);
+        }
 
+        private void MainWindow_Deactivated(object sender, EventArgs e)
+        {
+            _viewModel.UpdateWindowFocusState(false);
+        }
+
+        private void MainWindow_StateChanged(object sender, EventArgs e)
+        {
+            var isActive = this.WindowState != WindowState.Minimized && this.IsActive;
+            _viewModel.UpdateWindowFocusState(isActive);
+        }
+
+        private void MainWindow_LocationChanged(object sender, EventArgs e)
+        {
+            // Обновляем состояние при перемещении окна
+            _viewModel.UpdateWindowFocusState(this.IsActive);
+        }
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             MessageTextBox.Focus();
