@@ -46,7 +46,6 @@ namespace Messenger_Meowtalk.Client
 
         private void MainWindow_LocationChanged(object sender, EventArgs e)
         {
-            // Обновляем состояние при перемещении окна
             _viewModel.UpdateWindowFocusState(this.IsActive);
         }
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -89,10 +88,9 @@ namespace Messenger_Meowtalk.Client
             if (e.Key == Key.Enter && _viewModel.SendMessageCommand?.CanExecute(null) == true)
             {
                 _viewModel.SendMessageCommand.Execute(null);
-                e.Handled = true; // Это предотвращает звуковой сигнал системы
+                e.Handled = true;
                 ScrollToBottom();
 
-                // Убедимся, что фокус остается в TextBox
                 MessageTextBox.Focus();
                 MessageTextBox.CaretIndex = MessageTextBox.Text.Length;
             }
@@ -118,7 +116,6 @@ namespace Messenger_Meowtalk.Client
         {
             MessageTextBox?.Focus();
 
-            // Устанавливаем курсор в конец текста
             if (MessageTextBox != null)
             {
                 MessageTextBox.CaretIndex = MessageTextBox.Text.Length;
@@ -158,7 +155,6 @@ namespace Messenger_Meowtalk.Client
         {
             MessageTextBox?.Focus();
 
-            // Устанавливаем курсор в конец текста
             if (MessageTextBox != null)
             {
                 MessageTextBox.CaretIndex = MessageTextBox.Text.Length;

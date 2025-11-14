@@ -22,7 +22,6 @@ namespace Messenger_Meowtalk.Client.Services
 
         public void ShowMessageNotification(string sender, string message, string chatName = null)
         {
-            //Показываем уведомление только если окно не в фокусе или свернуто
             if (_isWindowFocused && Application.Current.MainWindow?.WindowState != WindowState.Minimized)
                 return;
 
@@ -36,7 +35,6 @@ namespace Messenger_Meowtalk.Client.Services
 
         private void ShowCustomNotification(string sender, string message, string chatName)
         {
-            //Закрываем предыдущее уведомление если есть
             _notificationWindow?.Close();
 
             _notificationWindow = new Window
@@ -95,7 +93,6 @@ namespace Messenger_Meowtalk.Client.Services
             border.Child = stackPanel;
             _notificationWindow.Content = border;
 
-            //Анимация появления
             _notificationWindow.Opacity = 0;
             _notificationWindow.Show();
 
@@ -112,11 +109,9 @@ namespace Messenger_Meowtalk.Client.Services
             };
             timer.Start();
 
-            //Закрытие по клику
             _notificationWindow.MouseDown += (s, e) =>
             {
                 CloseNotification();
-                //Активируем главное окно при клике на уведомление
                 Application.Current.MainWindow?.Activate();
                 if (Application.Current.MainWindow?.WindowState == WindowState.Minimized)
                 {

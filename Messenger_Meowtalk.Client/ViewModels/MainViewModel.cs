@@ -144,7 +144,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 chat.Messages.Add(message);
 
-                // Показываем уведомление для новых сообщений (кроме своих)
                 if (!message.IsMyMessage && message.Type == Message.MessageType.Text)
                 {
                     _notificationService.ShowMessageNotification(message.Sender, message.Content, chat.Name);
@@ -276,7 +275,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
             MessageText = string.Empty;
             await _chatService.SendMessageAsync(messageContent, SelectedChat.ChatId);
 
-            // Фокусируемся обратно на поле ввода
             Application.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
                 MessageTextBox_Focus();
@@ -296,12 +294,10 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 if (!string.IsNullOrEmpty(emoji.ImagePath))
                 {
-                    // Это графический стикер - отправляем специальным сообщением
                     _ = SendGraphicStickerAsync(emoji);
                 }
                 else
                 {
-                    // Это старый текстовый стикер (можно удалить после перехода)
                     _ = SendStickerAsync(emoji.Code);
                 }
             }
@@ -333,7 +329,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 Content = sticker.ImagePath, // Сохраняем путь к картинке
                 ChatId = SelectedChat.ChatId,
                 Timestamp = DateTime.Now,
-                Type = Message.MessageType.Sticker, // Важно: указываем тип Sticker
+                Type = Message.MessageType.Sticker,
                 IsMyMessage = true
             };
 
