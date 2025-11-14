@@ -2,7 +2,6 @@
 using Messenger_Meowtalk.Server.Services;
 using Messenger_Meowtalk.Shared.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Text;
 
 namespace Messenger_Meowtalk.Server.Services
 {
@@ -23,12 +22,6 @@ namespace Messenger_Meowtalk.Server.Services
 
             try
             {
-                // Убедимся, что у сообщения есть ID
-                if (string.IsNullOrEmpty(message.Id))
-                {
-                    message.Id = Guid.NewGuid().ToString();
-                }
-
                 var chat = await _context.Chats.FirstOrDefaultAsync(c => c.ChatId == message.ChatId);
 
                 if (chat == null)
@@ -71,45 +64,35 @@ namespace Messenger_Meowtalk.Server.Services
                     await _context.SaveChangesAsync();
                 }
 
-                // ОБРАБОТКА СТИКЕРОВ
-                if (message.Type == Message.MessageType.Sticker)
-                {
-                    await SaveStickerMessageAsync(message, validUsers);
-                }
-                else
-                {
-                    // ОБЫЧНЫЕ ТЕКСТОВЫЕ СООБЩЕНИЯ
-                    _context.Messages.Add(message);
-                    await _context.SaveChangesAsync();
+                _context.Messages.Add(message);
+                await _context.SaveChangesAsync();
 
-                    if (validUsers.Any())
+                if (validUsers.Any())
+                {
+                    foreach (var userId in validUsers)
                     {
-                        foreach (var userId in validUsers)
+                        try
                         {
-                            try
-                            {
-                                var userKey = _encryptionService.GenerateAndStoreUserKey(userId, "default_password_" + userId);
-                                var encryptedData = _encryptionService.EncryptMessage(message.Content, userId);
+                            var userKey = _encryptionService.GenerateAndStoreUserKey(userId, "default_password_" + userId);
+                            var encryptedData = _encryptionService.EncryptMessage(message.Content, userId);
 
-                                var encryptedMessage = new EncryptedMessage
-                                {
-                                    MessageId = message.Id,
-                                    UserId = userId,
-                                    EncryptedContent = encryptedData.encryptedData,
-                                    IV = encryptedData.iv,
-                                    EncryptionKey = "text"
-                                };
-
-                                _context.EncryptedMessages.Add(encryptedMessage);
-                            }
-                            catch (Exception ex)
+                            var encryptedMessage = new EncryptedMessage
                             {
-                                Console.WriteLine($"Ошибка шифрования для {userId}: {ex.Message}");
-                            }
+                                MessageId = message.Id,
+                                UserId = userId,
+                                EncryptedContent = encryptedData.encryptedData,
+                                IV = encryptedData.iv
+                            };
+
+                            _context.EncryptedMessages.Add(encryptedMessage);
                         }
-
-                        await _context.SaveChangesAsync();
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Ошибка шифрования для {userId}: {ex.Message}");
+                        }
                     }
+
+                    await _context.SaveChangesAsync();
                 }
 
                 await transaction.CommitAsync();
@@ -117,34 +100,8 @@ namespace Messenger_Meowtalk.Server.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                Console.WriteLine($"Ошибка сохранения сообщения: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 throw;
             }
-        }
-
-        private async Task SaveStickerMessageAsync(Message message, List<string> validUsers)
-        {
-            // Сохраняем сообщение со стикером
-            _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
-
-            // Для стикеров сохраняем оригинальный путь к изображению без шифрования
-            foreach (var userId in validUsers)
-            {
-                var encryptedMessage = new EncryptedMessage
-                {
-                    MessageId = message.Id,
-                    UserId = userId,
-                    EncryptedContent = Encoding.UTF8.GetBytes(message.Content),
-                    IV = Encoding.UTF8.GetBytes("sticker_no_encryption"),
-                    EncryptionKey = "sticker"
-                };
-
-                _context.EncryptedMessages.Add(encryptedMessage);
-            }
-
-            await _context.SaveChangesAsync();
         }
 
         public async Task<List<Message>> GetUserMessagesAsync(string userId, string chatId)
@@ -168,28 +125,18 @@ namespace Messenger_Meowtalk.Server.Services
                 {
                     if (encryptedMessages.TryGetValue(message.Id, out var encryptedMessage))
                     {
-                        // ПРОВЕРЯЕМ ЯВЛЯЕТСЯ ЛИ СООБЩЕНИЕ СТИКЕРОМ
-                        if (IsStickerMessage(encryptedMessage))
+                        try
                         {
-                            // ДЛЯ СТИКЕРОВ - ВОССТАНАВЛИВАЕМ ПУТЬ К ИЗОБРАЖЕНИЮ
-                            message.Content = Encoding.UTF8.GetString(encryptedMessage.EncryptedContent);
-                        }
-                        else
-                        {
-                            // ДЛЯ ТЕКСТОВЫХ СООБЩЕНИЙ - ДЕШИФРУЕМ
-                            try
-                            {
-                                var decryptedContent = _encryptionService.DecryptMessage(
-                                    encryptedMessage.EncryptedContent,
-                                    encryptedMessage.IV,
-                                    userId);
+                            var decryptedContent = _encryptionService.DecryptMessage(
+                                encryptedMessage.EncryptedContent,
+                                encryptedMessage.IV,
+                                userId);
 
-                                message.Content = decryptedContent;
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Ошибка дешифровки сообщения {message.Id}: {ex.Message}");
-                            }
+                            message.Content = decryptedContent;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Ошибка дешифровки сообщения {message.Id}: {ex.Message}");
                         }
                     }
 
@@ -204,11 +151,6 @@ namespace Messenger_Meowtalk.Server.Services
                 Console.WriteLine($"Ошибка получения сообщений: {ex.Message}");
                 throw;
             }
-        }
-
-        private bool IsStickerMessage(EncryptedMessage encryptedMessage)
-        {
-            return encryptedMessage.EncryptionKey == "sticker";
         }
     }
 }

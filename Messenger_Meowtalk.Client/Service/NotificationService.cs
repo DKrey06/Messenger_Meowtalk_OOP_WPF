@@ -1,9 +1,8 @@
-﻿using Messenger_Meowtalk.Shared.Models;
-using System;
+﻿using System;
 using System.Media;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
+using System.Windows.Controls;
 
 namespace Messenger_Meowtalk.Client.Services
 {
@@ -21,23 +20,14 @@ namespace Messenger_Meowtalk.Client.Services
             _isWindowFocused = isFocused;
         }
 
-        public void ShowMessageNotification(string sender, string message, string chatName = null, Message.MessageType messageType = Message.MessageType.Text)
+        public void ShowMessageNotification(string sender, string message, string chatName = null)
         {
             if (_isWindowFocused && Application.Current.MainWindow?.WindowState != WindowState.Minimized)
                 return;
 
-            // РАЗНЫЕ ТЕКСТЫ ДЛЯ РАЗНЫХ ТИПОВ СООБЩЕНИЙ
-            var notificationMessage = messageType switch
-            {
-                Message.MessageType.Sticker => "📎 Стикер",
-                Message.MessageType.Image => "🖼️ Изображение",
-                Message.MessageType.File => "📎 Файл",
-                _ => message.Length > 50 ? message.Substring(0, 50) + "..." : message
-            };
-
             Application.Current.Dispatcher.Invoke(() =>
             {
-                ShowCustomNotification(sender, notificationMessage, chatName);
+                ShowCustomNotification(sender, message, chatName);
             });
 
             PlayNotificationSound();
@@ -45,7 +35,6 @@ namespace Messenger_Meowtalk.Client.Services
 
         private void ShowCustomNotification(string sender, string message, string chatName)
         {
-            //Закрываем предыдущее уведомление если есть
             _notificationWindow?.Close();
 
             _notificationWindow = new Window
@@ -104,7 +93,6 @@ namespace Messenger_Meowtalk.Client.Services
             border.Child = stackPanel;
             _notificationWindow.Content = border;
 
-            //Анимация появления
             _notificationWindow.Opacity = 0;
             _notificationWindow.Show();
 
@@ -121,11 +109,9 @@ namespace Messenger_Meowtalk.Client.Services
             };
             timer.Start();
 
-            //Закрытие по клику
             _notificationWindow.MouseDown += (s, e) =>
             {
                 CloseNotification();
-                //Активируем главное окно при клике на уведомление
                 Application.Current.MainWindow?.Activate();
                 if (Application.Current.MainWindow?.WindowState == WindowState.Minimized)
                 {
