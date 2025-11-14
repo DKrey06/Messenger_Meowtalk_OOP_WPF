@@ -16,90 +16,53 @@ namespace Messenger_Meowtalk.Server.Services
             _encryptionService = encryptionService;
         }
 
-        public async Task SaveMessageAsync(Message message, List<string> participantUserIds)
+        public async Task SaveMessageAsync(Message message, List<string> participantIds)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
-                var chat = await _context.Chats.FirstOrDefaultAsync(c => c.ChatId == message.ChatId);
-
-                if (chat == null)
+                // Сохраняем в основную таблицу Messages
+                var messageToSave = new Message
                 {
-                    chat = new Chat { ChatId = message.ChatId, Name = $"Чат {message.ChatId}" };
-                    _context.Chats.Add(chat);
-                    await _context.SaveChangesAsync();
-                }
+                    Id = message.Id ?? Guid.NewGuid().ToString(),
+                    Sender = message.Sender,
+                    Content = message.Content, // Сохраняем оригинальное содержимое
+                    ChatId = message.ChatId,
+                    Timestamp = message.Timestamp,
+                    Type = message.Type,
+                    IsEdited = message.IsEdited,
+                    EditedTimestamp = message.EditedTimestamp,
+                    OriginalContent = message.OriginalContent,
+                    MediaType = message.MediaType
+                };
 
-                var validUsers = new List<string>();
-                foreach (var userId in participantUserIds)
+                _context.Messages.Add(messageToSave);
+
+                // ДОПОЛНИТЕЛЬНО сохраняем в EncryptedMessages для каждого участника
+                foreach (var participantId in participantIds)
                 {
-                    var userExists = await _context.Users.AnyAsync(u => u.UserId == userId);
-                    if (userExists)
+                    if (_encryptionService.HasKeyForUser(participantId))
                     {
-                        validUsers.Add(userId);
-                    }
-                }
+                        var (encryptedData, iv) = _encryptionService.EncryptMessage(message.Content, participantId);
 
-                if (validUsers.Any())
-                {
-                    foreach (var userId in validUsers)
-                    {
-                        var existingUserChat = await _context.UserChats
-                            .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.ChatId == message.ChatId);
-
-                        if (existingUserChat == null)
+                        var encryptedMessage = new EncryptedMessage
                         {
-                            var userChat = new UserChat
-                            {
-                                UserId = userId,
-                                ChatId = message.ChatId,
-                                JoinedAt = DateTime.Now
-                            };
+                            MessageId = messageToSave.Id,
+                            UserId = participantId,
+                            EncryptedContent = encryptedData,
+                            IV = iv
+                        };
 
-                            _context.UserChats.Add(userChat);
-                        }
+                        _context.EncryptedMessages.Add(encryptedMessage);
+                        Console.WriteLine($"Создана запись EncryptedMessage для пользователя {participantId}");
                     }
-
-                    await _context.SaveChangesAsync();
                 }
 
-                _context.Messages.Add(message);
                 await _context.SaveChangesAsync();
-
-                if (validUsers.Any())
-                {
-                    foreach (var userId in validUsers)
-                    {
-                        try
-                        {
-                            var userKey = _encryptionService.GenerateAndStoreUserKey(userId, "default_password_" + userId);
-                            var encryptedData = _encryptionService.EncryptMessage(message.Content, userId);
-
-                            var encryptedMessage = new EncryptedMessage
-                            {
-                                MessageId = message.Id,
-                                UserId = userId,
-                                EncryptedContent = encryptedData.encryptedData,
-                                IV = encryptedData.iv
-                            };
-
-                            _context.EncryptedMessages.Add(encryptedMessage);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Ошибка шифрования для {userId}: {ex.Message}");
-                        }
-                    }
-
-                    await _context.SaveChangesAsync();
-                }
-
-                await transaction.CommitAsync();
+                Console.WriteLine($"Сообщение {messageToSave.Id} сохранено в Messages и EncryptedMessages");
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                Console.WriteLine($"Ошибка сохранения сообщения: {ex.Message}");
                 throw;
             }
         }
@@ -108,6 +71,7 @@ namespace Messenger_Meowtalk.Server.Services
         {
             try
             {
+                // ЗАГРУЖАЕМ ИЗ ОСНОВНОЙ ТАБЛИЦЫ Messages
                 var messages = await _context.Messages
                     .Where(m => m.ChatId == chatId)
                     .OrderBy(m => m.Timestamp)
@@ -117,62 +81,29 @@ namespace Messenger_Meowtalk.Server.Services
 
                 foreach (var message in messages)
                 {
-                    var decryptedMessage = new Message
+                    var resultMessage = new Message
                     {
-                        Id = message.Id, // Важно: используем ID из базы данных
+                        Id = message.Id,
                         Sender = message.Sender,
+                        Content = message.Content, // Берем содержимое напрямую из Messages
                         ChatId = message.ChatId,
                         Timestamp = message.Timestamp,
                         Type = message.Type,
                         IsEdited = message.IsEdited,
                         EditedTimestamp = message.EditedTimestamp,
-                        OriginalContent = message.OriginalContent,
-                        MediaType = message.MediaType
+                        MediaType = message.MediaType,
+                        IsMyMessage = message.Sender == userId
                     };
 
-                    // Для системных сообщений не нужно расшифровывать
-                    if (message.Type == Message.MessageType.System)
-                    {
-                        decryptedMessage.Content = message.Content;
-                        decryptedMessage.IsMyMessage = message.Sender == userId;
-                    }
-                    else
-                    {
-                        // Для обычных сообщений расшифровываем
-                        var encryptedMessage = await _context.EncryptedMessages
-                            .FirstOrDefaultAsync(em => em.MessageId == message.Id && em.UserId == userId);
-
-                        if (encryptedMessage != null && _encryptionService.HasKeyForUser(userId))
-                        {
-                            try
-                            {
-                                decryptedMessage.Content = _encryptionService.DecryptMessage(
-                                    encryptedMessage.EncryptedContent,
-                                    encryptedMessage.IV,
-                                    userId);
-                                decryptedMessage.IsMyMessage = message.Sender == userId;
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Ошибка расшифровки сообщения {message.Id} для пользователя {userId}: {ex.Message}");
-                                decryptedMessage.Content = "[Не удалось расшифровать]";
-                            }
-                        }
-                        else
-                        {
-                            decryptedMessage.Content = message.Content; // Используем содержимое из Messages как fallback
-                        }
-                    }
-
-                    result.Add(decryptedMessage);
+                    result.Add(resultMessage);
                 }
 
-                Console.WriteLine($"Загружено {result.Count} сообщений для пользователя {userId} в чате {chatId}");
+                Console.WriteLine($"Загружено {result.Count} сообщений из Messages для пользователя {userId} в чате {chatId}");
                 return result;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Ошибка получения сообщений: {ex.Message}");
+                Console.WriteLine($"Ошибка получения сообщений из Messages: {ex.Message}");
                 return new List<Message>();
             }
         }
@@ -217,26 +148,29 @@ namespace Messenger_Meowtalk.Server.Services
         {
             try
             {
-                // Ищем сообщение по ID или по содержимому и времени
+                // Находим сообщение в базе
                 var existingMessage = await _context.Messages
                     .FirstOrDefaultAsync(m => m.Id == message.Id)
                     ?? await _context.Messages
                         .FirstOrDefaultAsync(m =>
                             m.Sender == message.Sender &&
-                            m.Content == message.OriginalContent &&
-                            m.Timestamp.Date == message.Timestamp.Date &&
-                            m.ChatId == message.ChatId);
+                            m.ChatId == message.ChatId &&
+                            Math.Abs((m.Timestamp - message.Timestamp).TotalMinutes) < 1);
 
                 if (existingMessage == null)
                 {
-                    Console.WriteLine($"Сообщение для обновления не найдено. ID: {message.Id}, Sender: {message.Sender}, Chat: {message.ChatId}");
+                    Console.WriteLine($"Сообщение для обновления не найдено. ID: {message.Id}");
                     return false;
                 }
 
-                // Обновляем ID сообщения на найденный в базе
-                message.Id = existingMessage.Id;
+                Console.WriteLine($"Обновление сообщения: ID={existingMessage.Id}, OldContent={existingMessage.Content}");
 
-                // Шифруем новое содержимое для каждого участника
+                // ОБНОВЛЯЕМ ОСНОВНУЮ ТАБЛИЦУ Messages
+                existingMessage.Content = message.Content; // Обновляем содержимое напрямую
+                existingMessage.IsEdited = message.IsEdited;
+                existingMessage.EditedTimestamp = message.EditedTimestamp;
+
+                // ОБНОВЛЯЕМ ТАБЛИЦУ EncryptedMessages ДЛЯ ВСЕХ УЧАСТНИКОВ
                 foreach (var participantId in participantIds)
                 {
                     if (_encryptionService.HasKeyForUser(participantId))
@@ -244,7 +178,7 @@ namespace Messenger_Meowtalk.Server.Services
                         // Шифруем новое содержимое
                         var (encryptedData, iv) = _encryptionService.EncryptMessage(message.Content, participantId);
 
-                        // Находим или создаем запись в EncryptedMessages
+                        // Находим запись в EncryptedMessages
                         var encryptedMessage = await _context.EncryptedMessages
                             .FirstOrDefaultAsync(em => em.MessageId == existingMessage.Id && em.UserId == participantId);
 
@@ -253,10 +187,11 @@ namespace Messenger_Meowtalk.Server.Services
                             // Обновляем существующую запись
                             encryptedMessage.EncryptedContent = encryptedData;
                             encryptedMessage.IV = iv;
+                            Console.WriteLine($"Обновлено EncryptedMessage для пользователя {participantId}");
                         }
                         else
                         {
-                            // Создаем новую запись
+                            // Создаем новую запись если не найдена
                             encryptedMessage = new EncryptedMessage
                             {
                                 MessageId = existingMessage.Id,
@@ -265,28 +200,17 @@ namespace Messenger_Meowtalk.Server.Services
                                 IV = iv
                             };
                             _context.EncryptedMessages.Add(encryptedMessage);
+                            Console.WriteLine($"Создано EncryptedMessage для пользователя {participantId}");
                         }
                     }
-                }
-
-                // Обновляем основные поля сообщения
-                existingMessage.IsEdited = message.IsEdited;
-                existingMessage.EditedTimestamp = message.EditedTimestamp;
-
-                // Если нужно сохранить оригинальное содержимое, зашифруем его
-                if (!string.IsNullOrEmpty(message.OriginalContent))
-                {
-                    // Шифруем оригинальное содержимое для первого участника (можно адаптировать для всех)
-                    var firstParticipant = participantIds.FirstOrDefault();
-                    if (firstParticipant != null && _encryptionService.HasKeyForUser(firstParticipant))
+                    else
                     {
-                        var (encryptedOriginal, ivOriginal) = _encryptionService.EncryptMessage(message.OriginalContent, firstParticipant);
-                        // Сохраняем в какое-то поле или создаем отдельную логику
+                        Console.WriteLine($"Нет ключа для пользователя {participantId}, пропускаем обновление EncryptedMessages");
                     }
                 }
 
                 await _context.SaveChangesAsync();
-                Console.WriteLine($"Сообщение {existingMessage.Id} успешно обновлено");
+                Console.WriteLine($"Сообщение {existingMessage.Id} успешно обновлено в Messages и EncryptedMessages. Новое содержание: {existingMessage.Content}");
                 return true;
             }
             catch (Exception ex)
@@ -295,7 +219,6 @@ namespace Messenger_Meowtalk.Server.Services
                 return false;
             }
         }
-
         public async Task<bool> DeleteMessageAsync(string messageId)
         {
             try
@@ -323,6 +246,59 @@ namespace Messenger_Meowtalk.Server.Services
             {
                 Console.WriteLine($"Ошибка удаления сообщения: {ex.Message}");
                 return false;
+            }
+        }
+        public async Task MigrateExistingMessagesToEncrypted()
+        {
+            try
+            {
+                // Получаем все сообщения, которые еще не имеют записей в EncryptedMessages
+                var messagesWithoutEncryption = await _context.Messages
+                    .Where(m => !_context.EncryptedMessages.Any(em => em.MessageId == m.Id))
+                    .ToListAsync();
+
+                Console.WriteLine($"Найдено {messagesWithoutEncryption.Count} сообщений для миграции в EncryptedMessages");
+
+                foreach (var message in messagesWithoutEncryption)
+                {
+                    // Получаем участников чата
+                    var participantIds = await _context.UserChats
+                        .Where(uc => uc.ChatId == message.ChatId)
+                        .Select(uc => uc.UserId)
+                        .ToListAsync();
+
+                    if (!participantIds.Any()) continue;
+
+                    // Создаем записи EncryptedMessages для каждого участника
+                    foreach (var participantId in participantIds)
+                    {
+                        if (!_encryptionService.HasKeyForUser(participantId))
+                        {
+                            _encryptionService.GenerateAndStoreUserKey(participantId, participantId + "_default_password");
+                        }
+
+                        var (encryptedData, iv) = _encryptionService.EncryptMessage(message.Content, participantId);
+
+                        var encryptedMessage = new EncryptedMessage
+                        {
+                            MessageId = message.Id,
+                            UserId = participantId,
+                            EncryptedContent = encryptedData,
+                            IV = iv
+                        };
+
+                        _context.EncryptedMessages.Add(encryptedMessage);
+                    }
+
+                    Console.WriteLine($"Мигрировано сообщение {message.Id} для {participantIds.Count} участников");
+                }
+
+                await _context.SaveChangesAsync();
+                Console.WriteLine("Миграция завершена");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка миграции сообщений: {ex.Message}");
             }
         }
     }

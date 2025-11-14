@@ -31,6 +31,7 @@ namespace Messenger_MeowtalkServer
             _messageService = new MessageService(_dbContext, encryptionService);
 
             await _dbContext.Database.EnsureCreatedAsync();
+            await _messageService.MigrateExistingMessagesToEncrypted();
 
             await LoadConnectedUsersFromDatabase();
             await EnsureUserChatRelationships();
@@ -524,7 +525,6 @@ namespace Messenger_MeowtalkServer
                 if (!participantIds.Any())
                 {
                     Console.WriteLine($"Не найдены участники чата {syncMessage.ChatId}");
-                    // Если нет участников, все равно попробуем обновить основное сообщение
                     participantIds = new List<string> { syncMessage.Sender };
                 }
 
@@ -533,36 +533,23 @@ namespace Messenger_MeowtalkServer
                 {
                     Id = messageId,
                     Sender = syncMessage.Sender,
-                    Content = syncMessage.OriginalContent, // Новое содержимое
+                    Content = syncMessage.OriginalContent, // Новое содержимое для Messages
                     ChatId = syncMessage.ChatId,
                     Timestamp = syncMessage.Timestamp,
                     IsEdited = syncMessage.IsEdited,
                     EditedTimestamp = syncMessage.EditedTimestamp
                 };
 
-                // Обновляем сообщение в базе
+                // Обновляем сообщение в обеих таблицах
                 var success = await _messageService.UpdateMessageAsync(messageToUpdate, participantIds);
 
                 if (success)
                 {
-                    Console.WriteLine($"Сообщение {messageId} успешно обновлено в базе данных");
+                    Console.WriteLine($"Сообщение {messageId} успешно обновлено в Messages и EncryptedMessages");
                 }
                 else
                 {
-                    Console.WriteLine($"Не удалось обновить сообщение {messageId} в базе данных");
-
-                    // Альтернативный способ: находим и обновляем сообщение напрямую
-                    var directMessage = await _dbContext.Messages
-                        .FirstOrDefaultAsync(m => m.Id == messageId);
-
-                    if (directMessage != null)
-                    {
-                        directMessage.Content = syncMessage.OriginalContent;
-                        directMessage.IsEdited = syncMessage.IsEdited;
-                        directMessage.EditedTimestamp = syncMessage.EditedTimestamp;
-                        await _dbContext.SaveChangesAsync();
-                        Console.WriteLine($"Сообщение {messageId} обновлено напрямую");
-                    }
+                    Console.WriteLine($"Не удалось обновить сообщение {messageId}");
                 }
 
                 // Рассылаем синхронизацию всем клиентам
@@ -574,6 +561,7 @@ namespace Messenger_MeowtalkServer
                 Console.WriteLine($"Ошибка обработки редактирования сообщения: {ex.Message}");
             }
         }
+
 
         private static async Task HandleSyncDeleteMessage(Message syncMessage)
         {
