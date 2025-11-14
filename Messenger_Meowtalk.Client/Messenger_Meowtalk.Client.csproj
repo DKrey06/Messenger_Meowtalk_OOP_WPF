@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="Assets\Images\logo.png" />
 	  <None Remove="Assets\Stickers\default_cats\cat_hello.png" />
 	  <None Remove="Assets\Stickers\default_cats\cat_laugh.png" />
 	  <None Remove="Assets\Stickers\default_cats\cat_love.png" />
@@ -30,6 +31,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Include="Assets\Images\logo.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Assets\Stickers\default_cats\cat_hello.png">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>

@@ -5,7 +5,7 @@
         Height="500" Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#F5F5F5">
+        Background="{StaticResource BackgroundBrush}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -14,15 +14,13 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!--Лого с котиком-->
+        <!--Лого с котиком-КАРТИНКА-->
         <StackPanel Grid.Row="0" Margin="40" HorizontalAlignment="Center">
-            <TextBlock Text="🐱" 
-                       FontSize="60"
-                       HorizontalAlignment="Center"/>
+            <Image Source="/Assets/Images/logo.png" Height="80" Width="80"/>
             <TextBlock Text="MeowTalk" 
-                       FontSize="28" 
+                       FontSize="{StaticResource FontSizeXXLarge}" 
                        FontWeight="Bold"
-                       Foreground="#4CAF50"
+                       Foreground="{StaticResource PrimaryBrush}"
                        HorizontalAlignment="Center"
                        Margin="0,10,0,0"/>
         </StackPanel>
@@ -32,13 +30,13 @@
             <TextBlock Text="Войти в MeowTalk" 
                        FontSize="20"
                        FontWeight="SemiBold"
-                       Foreground="#333333"
+                       Foreground="{StaticResource TextPrimaryBrush}"
                        Margin="0,0,0,30"
                        HorizontalAlignment="Center"/>
 
             <TextBlock Text="Введите имя пользователя" 
                        FontSize="14"
-                       Foreground="#666666"
+                       Foreground="{StaticResource TextSecondaryBrush}"
                        Margin="0,0,0,5"/>
 
             <!--Поле ввода-->
@@ -47,13 +45,14 @@
                      FontSize="16"
                      Padding="10"
                      Background="White"
-                     BorderBrush="#4CAF50"
-                     BorderThickness="1"/>
+                     BorderBrush="{StaticResource PrimaryBrush}"
+                     BorderThickness="1"
+                     KeyDown="UsernameTextBox_KeyDown"/>
 
             <Button Content="Войти" 
                     Height="45" 
                     Margin="0,20,0,0"
-                    Background="#4CAF50"
+                    Background="{StaticResource PrimaryBrush}"
                     Foreground="White"
                     FontSize="16"
                     FontWeight="SemiBold"
@@ -66,7 +65,7 @@
         <Border Grid.Row="2" Background="White" Padding="20">
             <TextBlock Text="Простой и удобный мессенджер для общения" 
                        FontSize="12"
-                       Foreground="#666666"
+                       Foreground="{StaticResource TextSecondaryBrush}"
                        HorizontalAlignment="Center"/>
         </Border>
     </Grid>

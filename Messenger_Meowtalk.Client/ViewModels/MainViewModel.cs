@@ -123,8 +123,8 @@ namespace Messenger_Meowtalk.Client.ViewModels
         private void ProcessIncomingMessage(Message message)
         {
             if (message.Type == Message.MessageType.Text &&
-        !string.IsNullOrEmpty(message.Content) &&
-        (message.Content.StartsWith("[STICKER]") || IsImagePath(message.Content)))
+                !string.IsNullOrEmpty(message.Content) &&
+                (message.Content.StartsWith("[STICKER]") || IsImagePath(message.Content)))
             {
                 message.Type = Message.MessageType.Sticker;
             }
@@ -144,9 +144,16 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 chat.Messages.Add(message);
 
-                if (!message.IsMyMessage && message.Type == Message.MessageType.Text)
+                if (!message.IsMyMessage)
                 {
-                    _notificationService.ShowMessageNotification(message.Sender, message.Content, chat.Name);
+                    string notificationContent = message.Content;
+
+                    if (message.Type == Message.MessageType.Sticker)
+                    {
+                        notificationContent = "[Стикер]";
+                    }
+
+                    _notificationService.ShowMessageNotification(message.Sender, notificationContent, chat.Name);
                 }
             }
 
@@ -322,11 +329,10 @@ namespace Messenger_Meowtalk.Client.ViewModels
         {
             if (SelectedChat == null) return;
 
-            // ВМЕСТО текстового сообщения создаем сообщение со стикером
             var message = new Message
             {
                 Sender = CurrentUser.Username,
-                Content = sticker.ImagePath, // Сохраняем путь к картинке
+                Content = sticker.ImagePath,
                 ChatId = SelectedChat.ChatId,
                 Timestamp = DateTime.Now,
                 Type = Message.MessageType.Sticker,
