@@ -105,8 +105,21 @@ namespace Messenger_Meowtalk.Client.ViewModels
             InitializeTestChats();
             InitializeEmojis();
             //InitializeStickers();
+            _ = Task.Run(async () => await LoadChatHistoryAsync());
         }
-
+        private async Task LoadChatHistoryAsync()
+        {
+            try
+            {
+                // Здесь можно добавить загрузку истории из базы через сервис
+                // Пока просто инициализируем тестовые чаты
+                await Task.Delay(1000); // Небольшая задержка для инициализации
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Ошибка загрузки истории: {ex.Message}");
+            }
+        }
         private async Task InitializeConnectionAsync()
         {
             await _chatService.ConnectAsync(CurrentUser.Username);
@@ -122,7 +135,14 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private void ProcessIncomingMessage(Message message)
         {
+            // Если это сохраненный стикер из базы, восстанавливаем тип
             if (message.Type == Message.MessageType.Text &&
+                !string.IsNullOrEmpty(message.MediaType) &&
+                message.MediaType == "image")
+            {
+                message.Type = Message.MessageType.Sticker;
+            }
+            else if (message.Type == Message.MessageType.Text &&
                 !string.IsNullOrEmpty(message.Content) &&
                 (message.Content.StartsWith("[STICKER]") || IsImagePath(message.Content)))
             {
@@ -336,6 +356,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
                 ChatId = SelectedChat.ChatId,
                 Timestamp = DateTime.Now,
                 Type = Message.MessageType.Sticker,
+                MediaType = "image",
                 IsMyMessage = true
             };
 

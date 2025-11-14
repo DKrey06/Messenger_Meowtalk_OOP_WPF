@@ -24,6 +24,10 @@ namespace Messenger_Meowtalk.Shared.Models
 
         [JsonPropertyName("type")]
         public MessageType Type { get; set; } = MessageType.Text;
+
+        [JsonPropertyName("mediaType")]
+        public string MediaType { get; set; } = string.Empty; 
+
         public bool IsMyMessage { get; set; }
         public bool ShowSender { get; set; } = true;
 
