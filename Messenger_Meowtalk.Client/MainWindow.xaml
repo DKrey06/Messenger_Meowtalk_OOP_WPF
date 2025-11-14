@@ -1,0 +1,532 @@
+﻿<Window x:Class="Messenger_Meowtalk.Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MeowTalk" 
+        Height="700" 
+        Width="1200"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Список чатов - слева -->
+        <Grid Grid.Column="0" Background="{StaticResource SurfaceBrush}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Верхняя панелька с лого -->
+            <Border Grid.Row="0" 
+                    Background="{StaticResource PrimaryBrush}" 
+                    Padding="20">
+                <StackPanel Orientation="Horizontal" 
+                            VerticalAlignment="Center">
+                    <TextBlock Text="🐱" 
+                               FontSize="20"
+                               Margin="0,0,10,0"/>
+                    <TextBlock Text="MeowTalk" 
+                               Foreground="White" 
+                               FontWeight="Bold"
+                               FontSize="{StaticResource FontSizeLarge}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Поиск чата -->
+            <Border Grid.Row="1" 
+                    Padding="10" 
+                    Background="{StaticResource SurfaceBrush}">
+                <Grid>
+                    <TextBox x:Name="SearchTextBox"
+                             Height="35" 
+                             Padding="10,0,35,0"
+                             Background="White"
+                             BorderBrush="LightGray"
+                             BorderThickness="1"
+                             FontSize="{StaticResource FontSizeNormal}"
+                             Text="Поиск чата..."/>
+                </Grid>
+            </Border>
+
+            <!-- Список чатов -->
+            <ScrollViewer Grid.Row="2" 
+                          VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="ChatsList" 
+                              ItemsSource="{Binding Chats}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="15,10" 
+                                    BorderBrush="LightGray" 
+                                    BorderThickness="0,0,0,1" 
+                                    Cursor="Hand" 
+                                    Background="Transparent"
+                                    MouseLeftButtonUp="ChatItem_MouseLeftButtonUp">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#E0E0E0"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Ellipse Grid.Column="0" 
+                                             Width="45" 
+                                             Height="45" 
+                                             Fill="{StaticResource PrimaryBrush}" 
+                                             Margin="0,0,10,0">
+                                        <Ellipse.OpacityMask>
+                                            <VisualBrush Visual="{Binding ElementName=AvatarImage}"/>
+                                        </Ellipse.OpacityMask>
+                                    </Ellipse>
+
+                                    <Image x:Name="AvatarImage" 
+                                           Source="/Assets/Images/default-avatar.png" 
+                                           Height="45" 
+                                           Width="45" 
+                                           Margin="0,0,10,0" 
+                                           Opacity="0"/>
+
+                                    <StackPanel Grid.Column="1" 
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" 
+                                                   FontWeight="SemiBold"
+                                                   FontSize="{StaticResource FontSizeNormal}"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <TextBlock Text="{Binding LastMessage}" 
+                                                   FontSize="{StaticResource FontSizeSmall}"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2" 
+                                                VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding LastMessageTime}" 
+                                                   FontSize="{StaticResource FontSizeSmall}"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Нижняя панелька с текущим пользователем -->
+            <Border Grid.Row="3" 
+                    Background="{StaticResource PrimaryBrush}" 
+                    Padding="15">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Аватар текущего пользователя -->
+                    <Ellipse Grid.Column="0" 
+                             Width="40" 
+                             Height="40" 
+                             Fill="White" 
+                             Margin="0,0,10,0">
+                        <Ellipse.OpacityMask>
+                            <VisualBrush Visual="{Binding ElementName=UserAvatarImage}"/>
+                        </Ellipse.OpacityMask>
+                    </Ellipse>
+
+                    <Image x:Name="UserAvatarImage" 
+                           Source="/Assets/Images/default-avatar.png" 
+                           Height="40" 
+                           Width="40" 
+                           Margin="0,0,10,0" 
+                           Opacity="0"/>
+
+                    <!-- Информация о пользователе -->
+                    <StackPanel Grid.Column="1" 
+                                VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CurrentUser.Username}" 
+                                   Foreground="White" 
+                                   FontWeight="SemiBold"
+                                   FontSize="{StaticResource FontSizeNormal}"/>
+                        <TextBlock Text="{Binding CurrentUser.Status}" 
+                                   Foreground="LightGray"
+                                   FontSize="{StaticResource FontSizeSmall}"/>
+                    </StackPanel>
+
+                    <!-- Кнопки нового чата и настроек -->
+                    <StackPanel Grid.Column="2" 
+                                Orientation="Horizontal" 
+                                VerticalAlignment="Center">
+                        <Button Content="➕" 
+                                Background="Transparent" 
+                                BorderThickness="0"
+                                Foreground="White"
+                                FontSize="{StaticResource FontSizeMedium}"
+                                Cursor="Hand"
+                                ToolTip="Начать новый чат"
+                                Width="30" 
+                                Height="30"
+                                Click="NewChatButton_Click"/>
+
+                        <Button Content="⚙️" 
+                                Background="Transparent" 
+                                BorderThickness="0"
+                                Foreground="White"
+                                FontSize="{StaticResource FontSizeSmall}"
+                                Cursor="Hand"
+                                ToolTip="Настройки пользователя"
+                                Width="30" 
+                                Height="30"
+                                Margin="5,0,0,0"
+                                Click="SettingsButton_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Область сообщений - правая панелька -->
+        <Grid Grid.Column="1" 
+              Visibility="{Binding SelectedChat, Converter={StaticResource NullToVisibilityConverter}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Заголовок чата -->
+            <Border Grid.Row="0" 
+                    Background="{StaticResource AccentBrush}" 
+                    Padding="15" 
+                    BorderBrush="LightGray" 
+                    BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" 
+                                Orientation="Horizontal">
+                        <Ellipse Width="40" 
+                                 Height="40" 
+                                 Fill="{StaticResource PrimaryBrush}">
+                            <Ellipse.OpacityMask>
+                                <VisualBrush Visual="{Binding ElementName=ChatAvatarImage}"/>
+                            </Ellipse.OpacityMask>
+                        </Ellipse>
+                        <Image x:Name="ChatAvatarImage" 
+                               Source="/Assets/Images/default-avatar.png" 
+                               Height="40" 
+                               Width="40" 
+                               Margin="0,0,10,0" 
+                               Opacity="0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding SelectedChat.Name}" 
+                                       FontWeight="SemiBold"
+                                       FontSize="{StaticResource FontSizeMedium}"
+                                       Foreground="White"/>
+                            <TextBlock Text="в сети" 
+                                       FontSize="{StaticResource FontSizeSmall}"
+                                       Foreground="LightGray"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Кнопка информации о чате -->
+                    <StackPanel Grid.Column="2" 
+                                Orientation="Horizontal">
+                        <Button Content="🗑️" 
+                                Background="Transparent" 
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                ToolTip="Очистить историю чата"
+                                FontSize="{StaticResource FontSizeMedium}"
+                                Foreground="White"
+                                Command="{Binding ClearChatHistoryCommand}"
+                                Margin="0,0,10,0"/>
+
+                        <Button Content="ⓘ" 
+                                Background="Transparent" 
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                ToolTip="Информация о чате"
+                                FontSize="{StaticResource FontSizeMedium}"
+                                Foreground="White"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Область сообщений -->
+            <Border Grid.Row="1" 
+                    Background="{StaticResource ChatBackgroundBrush}">
+                <ScrollViewer x:Name="MessagesScrollViewer" 
+                              VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding SelectedChat.Messages}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="10,5" 
+                                        Padding="15,10" 
+                                        Background="{Binding IsMyMessage, Converter={StaticResource MessageBackgroundConverter}}"
+                                        CornerRadius="10"
+                                        HorizontalAlignment="{Binding IsMyMessage, Converter={StaticResource MessageAlignmentConverter}}"
+                                        MaxWidth="400">
+
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="Редактировать" 
+                                                      Click="EditMenuItem_Click"
+                                                      Visibility="{Binding IsMyMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <MenuItem Header="Удалить" 
+                                                      Click="DeleteMenuItem_Click"
+                                                      Visibility="{Binding IsMyMessage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Sender}" 
+                                                   FontSize="{StaticResource FontSizeSmall}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Visibility="{Binding ShowSender, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                                        <!-- Стикер -->
+                                        <Image Source="{Binding Content}" 
+                                               Width="128" 
+                                               Height="128"
+                                               Stretch="Uniform"
+                                               Visibility="{Binding Type, Converter={StaticResource StickerVisibilityConverter}}"/>
+
+                                        <!-- Текстовое сообщение -->
+                                        <TextBlock Text="{Binding Content}" 
+                                                   FontSize="{StaticResource FontSizeNormal}"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,2,0,0"
+                                                   Visibility="{Binding Type, Converter={StaticResource TextMessageVisibilityConverter}}"/>
+
+                                        <!-- Индикатор редактирования -->
+                                        <TextBlock Text="(ред.)" 
+                                                   FontSize="{StaticResource FontSizeSmall}"
+                                                   FontStyle="Italic"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Visibility="{Binding IsEdited, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                        <TextBlock Text="{Binding Timestamp, StringFormat='HH:mm'}" 
+                                                   FontSize="{StaticResource FontSizeSmall}"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   HorizontalAlignment="Right"
+                                                   Margin="0,5,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Панелька для ввода сообщения -->
+            <Border Grid.Row="2" 
+                    Background="{StaticResource AccentBrush}" 
+                    Padding="15">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Кнопка открытия панели эмодзи -->
+                    <Button Grid.Column="0" 
+                            Content="😊" 
+                            Background="Transparent" 
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            FontSize="{StaticResource FontSizeMedium}"
+                            Command="{Binding ToggleEmojiPanelCommand}"
+                            ToolTip="Смайлики и стикеры"/>
+
+                    <TextBox Grid.Column="1" 
+                             x:Name="MessageTextBox"
+                             Height="40" 
+                             Margin="10,0"
+                             Padding="15,0"
+                             FontSize="{StaticResource FontSizeNormal}"
+                             Background="White"
+                             BorderBrush="LightGray"
+                             BorderThickness="1"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="MessageTextBox_KeyDown"/>
+
+                    <Button Grid.Column="2" 
+                            Content="➤" 
+                            Height="40" 
+                            Width="40"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding SendMessageCommand}"
+                            ToolTip="Отправить сообщение"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Заглушка когда чат не выбран -->
+        <Border Grid.Column="1" 
+                Background="{StaticResource ChatBackgroundBrush}"
+                Visibility="{Binding SelectedChat, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=true}">
+            <StackPanel VerticalAlignment="Center" 
+                        HorizontalAlignment="Center">
+                <TextBlock Text="🐱" 
+                           FontSize="80" 
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Выберите чат для начала общения" 
+                           FontSize="{StaticResource FontSizeLarge}"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,20,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Popup для эмодзи и стикеров -->
+        <Popup x:Name="EmojiPopup"
+               PlacementTarget="{Binding ElementName=MessageTextBox}"
+               Placement="Top"
+               HorizontalOffset="-515"
+               IsOpen="{Binding IsEmojiPanelOpen}"
+               StaysOpen="False"
+               PopupAnimation="Slide"
+               VerticalOffset="-10"
+               Width="300"
+               Height="400">
+
+            <Border Background="White" 
+                    BorderBrush="LightGray" 
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="10">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Заголовок и вкладки -->
+                    <StackPanel Grid.Row="0" 
+                                Orientation="Horizontal" 
+                                Margin="0,0,0,10">
+                        <TextBlock Text="Эмодзи и стикеры" 
+                                   FontWeight="Bold"
+                                   FontSize="{StaticResource FontSizeNormal}"/>
+                    </StackPanel>
+
+                    <!-- Эмодзи -->
+                    <Border Grid.Row="1" 
+                            BorderBrush="LightGray" 
+                            BorderThickness="0,0,0,1" 
+                            Padding="0,0,0,10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" 
+                                       Text="Эмодзи" 
+                                       FontSize="{StaticResource FontSizeSmall}"
+                                       Foreground="Gray"
+                                       Margin="0,0,0,5"/>
+
+                            <ScrollViewer Grid.Row="1" 
+                                          VerticalScrollBarVisibility="Auto" 
+                                          MaxHeight="120">
+                                <ItemsControl ItemsSource="{Binding Emojis}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Content="{Binding Code}" 
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    FontSize="20"
+                                                    Width="40" 
+                                                    Height="40"
+                                                    Cursor="Hand"
+                                                    ToolTip="{Binding Description}"
+                                                    Command="{Binding DataContext.InsertEmojiCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+
+                    <!-- Стикеры -->
+                    <Border Grid.Row="2" 
+                            Padding="0,10,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" 
+                                       Text="Стикеры" 
+                                       FontSize="{StaticResource FontSizeSmall}"
+                                       Foreground="Gray"
+                                       Margin="0,0,0,5"/>
+
+                            <ScrollViewer Grid.Row="1" 
+                                          VerticalScrollBarVisibility="Auto" 
+                                          MaxHeight="120">
+                                <ItemsControl ItemsSource="{Binding Stickers}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Width="40" 
+                                                    Height="40"
+                                                    Cursor="Hand"
+                                                    ToolTip="{Binding Description}"
+                                                    Command="{Binding DataContext.InsertEmojiCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}">
+                                                <Image Source="{Binding ImagePath}" 
+                                                       Width="32" 
+                                                       Height="32"
+                                                       Stretch="Uniform"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Popup>
+    </Grid>
+</Window>
