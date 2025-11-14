@@ -10,9 +10,11 @@ namespace Messenger_Meowtalk.Client.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value is Message.MessageType type && type == Message.MessageType.Sticker
-                ? Visibility.Visible
-                : Visibility.Collapsed;
+            if (value is Message.MessageType messageType)
+            {
+                return messageType == Message.MessageType.Sticker ? Visibility.Visible : Visibility.Collapsed;
+            }
+            return Visibility.Collapsed;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

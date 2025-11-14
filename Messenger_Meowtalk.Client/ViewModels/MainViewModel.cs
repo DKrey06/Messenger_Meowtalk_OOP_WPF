@@ -122,13 +122,6 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
         private void ProcessIncomingMessage(Message message)
         {
-            if (message.Type == Message.MessageType.Text &&
-        !string.IsNullOrEmpty(message.Content) &&
-        (message.Content.StartsWith("[STICKER]") || IsImagePath(message.Content)))
-            {
-                message.Type = Message.MessageType.Sticker;
-            }
-
             if (message.Type == Message.MessageType.System && message.Content.Contains("создал чат"))
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -144,10 +137,18 @@ namespace Messenger_Meowtalk.Client.ViewModels
             {
                 chat.Messages.Add(message);
 
-                // Показываем уведомление для новых сообщений (кроме своих)
-                if (!message.IsMyMessage && message.Type == Message.MessageType.Text)
+                // УВЕДОМЛЕНИЯ ДЛЯ СТИКЕРОВ И СООБЩЕНИЙ
+                if (!message.IsMyMessage)
                 {
-                    _notificationService.ShowMessageNotification(message.Sender, message.Content, chat.Name);
+                    string notificationText = message.Type == Message.MessageType.Sticker
+                        ? "[STICKER]"
+                        : message.Content;
+
+                    _notificationService.ShowMessageNotification(
+                        message.Sender,
+                        notificationText,
+                        chat.Name,
+                        message.Type);
                 }
             }
 

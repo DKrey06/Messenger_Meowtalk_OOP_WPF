@@ -34,7 +34,7 @@ namespace Messenger_Meowtalk.Client.Services
 
                 foreach (var filePath in imageFiles)
                 {
-                    // Конвертируем в относительный путь для pack URI
+                    // Используем относительный путь, который будет работать при загрузке
                     var relativePath = filePath.Replace("\\", "/");
                     if (relativePath.StartsWith("Assets/"))
                     {
@@ -46,7 +46,7 @@ namespace Messenger_Meowtalk.Client.Services
                         Code = Path.GetFileNameWithoutExtension(filePath),
                         Description = "Стикер",
                         IsSticker = true,
-                        ImagePath = relativePath // Используем относительный путь
+                        ImagePath = relativePath
                     };
                     GraphicStickers.Add(sticker);
                 }
