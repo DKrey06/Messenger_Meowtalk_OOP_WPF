@@ -112,7 +112,6 @@ namespace Messenger_MeowtalkServer
 
                         if (message != null)
                         {
-                            // Обработка создания чата (существующий код)
                             if (message.Type == Message.MessageType.System && message.Content.Contains("создал чат"))
                             {
                                 await HandleChatCreation(message.ChatId, message.Sender);
@@ -132,32 +131,66 @@ namespace Messenger_MeowtalkServer
                                 await CreateUserChatRelationshipsForNewChat(message.ChatId);
                             }
 
-                            // СОХРАНЕНИЕ СТИКЕРОВ В БАЗУ ДАННЫХ
-                            if (message.Type == Message.MessageType.Sticker ||
-                                message.Type == Message.MessageType.Text)
+                            if (message.Type == Message.MessageType.System)
                             {
-                                try
+                                var userId = await SaveUserToDatabase(message.Sender);
+
+                                var user = _connectedUsers.FirstOrDefault(u => u.Username == message.Sender);
+                                if (user == null && message.Content.Contains("присоединился"))
                                 {
-                                    await SyncConnectedUsersWithDatabase();
-
-                                    var participantIds = _connectedUsers
-                                        .Where(u => u != null && !string.IsNullOrEmpty(u.UserId))
-                                        .Select(u => u.UserId)
-                                        .ToList();
-
-                                    if (!participantIds.Any())
+                                    var newUser = new User
                                     {
-                                        _dbContext.Messages.Add(message);
-                                        await _dbContext.SaveChangesAsync();
-                                    }
-                                    else
+                                        UserId = userId,
+                                        Username = message.Sender,
+                                        IsOnline = true,
+                                        Status = "В сети"
+                                    };
+                                    _connectedUsers.Add(newUser);
+                                    user = newUser;
+                                }
+
+                                if (message.Content.Contains("присоединился") && user != null)
+                                {
+                                    await Task.Delay(500);
+
+                                    var userChats = await _dbContext.UserChats
+                                        .Where(uc => uc.UserId == user.UserId)
+                                        .Select(uc => uc.ChatId)
+                                        .ToListAsync();
+
+                                    foreach (var chatId in userChats)
                                     {
-                                        await _messageService.SaveMessageAsync(message, participantIds);
+                                        await SendChatHistory(webSocket, chatId, user.UserId);
                                     }
                                 }
-                                catch (Exception ex)
+                            }
+                            else
+                            {
+                                if (message.Type == Message.MessageType.Text)
                                 {
-                                    Console.WriteLine($"Ошибка сохранения в БД: {ex.Message}");
+                                    try
+                                    {
+                                        await SyncConnectedUsersWithDatabase();
+
+                                        var participantIds = _connectedUsers
+                                            .Where(u => u != null && !string.IsNullOrEmpty(u.UserId))
+                                            .Select(u => u.UserId)
+                                            .ToList();
+
+                                        if (!participantIds.Any())
+                                        {
+                                            _dbContext.Messages.Add(message);
+                                            await _dbContext.SaveChangesAsync();
+                                        }
+                                        else
+                                        {
+                                            await _messageService.SaveMessageAsync(message, participantIds);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine($"Ошибка сохранения в БД: {ex.Message}");
+                                    }
                                 }
                             }
 
@@ -361,13 +394,6 @@ namespace Messenger_MeowtalkServer
 
                 foreach (var message in messages)
                 {
-                    // Для стикеров убеждаемся, что тип правильно установлен
-                    if (message.Type == Message.MessageType.Sticker && IsImagePath(message.Content))
-                    {
-                        // Тип уже должен быть установлен, но на всякий случай проверяем
-                        message.Type = Message.MessageType.Sticker;
-                    }
-
                     var messageJson = JsonSerializer.Serialize(message);
                     var buffer = Encoding.UTF8.GetBytes(messageJson);
 
@@ -385,17 +411,6 @@ namespace Messenger_MeowtalkServer
             {
                 Console.WriteLine($"Ошибка отправки истории: {ex.Message}");
             }
-        }
-        private static bool IsImagePath(string content)
-        {
-            if (string.IsNullOrEmpty(content))
-                return false;
-
-            return content.ToLower().EndsWith(".png") ||
-                   content.ToLower().EndsWith(".jpg") ||
-                   content.ToLower().EndsWith(".jpeg") ||
-                   content.StartsWith("/Assets/Stickers/") ||
-                   content.Contains("cat_");
         }
 
         private static async Task CreateUserChatRelationshipsForNewChat(string chatId)

@@ -22,9 +22,6 @@ namespace Messenger_Meowtalk.Shared.Models
         [JsonPropertyName("iv")]
         public byte[] IV { get; set; }
 
-        [JsonPropertyName("encryptionKey")]
-        public string EncryptionKey { get; set; }
-
         [JsonPropertyName("encryptedAt")]
         public DateTime EncryptedAt { get; set; } = DateTime.Now;
     }
