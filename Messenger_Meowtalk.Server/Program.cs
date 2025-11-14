@@ -30,7 +30,6 @@ namespace Messenger_MeowtalkServer
             var encryptionService = new EncryptionService();
             _messageService = new MessageService(_dbContext, encryptionService);
 
-            //await _dbContext.Database.EnsureDeletedAsync();//Удаление а затем создание базы данных (эту строку потом удалить в конце
             await _dbContext.Database.EnsureCreatedAsync();
 
             await LoadConnectedUsersFromDatabase();
@@ -513,31 +512,56 @@ namespace Messenger_MeowtalkServer
             {
                 var messageId = syncMessage.Content.Replace("sync_edit_message:", "");
 
-                // Находим сообщение в базе данных
-                var messageToUpdate = await _dbContext.Messages
-                    .FirstOrDefaultAsync(m => m.Id == messageId);
+                Console.WriteLine($"Обработка редактирования сообщения: {messageId} от пользователя {syncMessage.Sender}");
+                Console.WriteLine($"Новое содержание: {syncMessage.OriginalContent}");
 
-                if (messageToUpdate != null)
+                // Получаем список участников чата
+                var participantIds = await _dbContext.UserChats
+                    .Where(uc => uc.ChatId == syncMessage.ChatId)
+                    .Select(uc => uc.UserId)
+                    .ToListAsync();
+
+                if (!participantIds.Any())
                 {
-                    // Получаем список участников чата
-                    var participantIds = await _dbContext.UserChats
-                        .Where(uc => uc.ChatId == syncMessage.ChatId)
-                        .Select(uc => uc.UserId)
-                        .ToListAsync();
+                    Console.WriteLine($"Не найдены участники чата {syncMessage.ChatId}");
+                    // Если нет участников, все равно попробуем обновить основное сообщение
+                    participantIds = new List<string> { syncMessage.Sender };
+                }
 
-                    // Обновляем сообщение в базе с повторным шифрованием
-                    var success = await _messageService.UpdateMessageAsync(new Message
-                    {
-                        Id = messageId,
-                        Content = syncMessage.OriginalContent, // Новое содержимое
-                        IsEdited = syncMessage.IsEdited,
-                        EditedTimestamp = syncMessage.EditedTimestamp,
-                        OriginalContent = messageToUpdate.Content // Старое содержимое (уже зашифрованное)
-                    }, participantIds);
+                // Создаем объект сообщения для обновления
+                var messageToUpdate = new Message
+                {
+                    Id = messageId,
+                    Sender = syncMessage.Sender,
+                    Content = syncMessage.OriginalContent, // Новое содержимое
+                    ChatId = syncMessage.ChatId,
+                    Timestamp = syncMessage.Timestamp,
+                    IsEdited = syncMessage.IsEdited,
+                    EditedTimestamp = syncMessage.EditedTimestamp
+                };
 
-                    if (success)
+                // Обновляем сообщение в базе
+                var success = await _messageService.UpdateMessageAsync(messageToUpdate, participantIds);
+
+                if (success)
+                {
+                    Console.WriteLine($"Сообщение {messageId} успешно обновлено в базе данных");
+                }
+                else
+                {
+                    Console.WriteLine($"Не удалось обновить сообщение {messageId} в базе данных");
+
+                    // Альтернативный способ: находим и обновляем сообщение напрямую
+                    var directMessage = await _dbContext.Messages
+                        .FirstOrDefaultAsync(m => m.Id == messageId);
+
+                    if (directMessage != null)
                     {
-                        Console.WriteLine($"Сообщение {messageId} отредактировано пользователем {syncMessage.Sender}");
+                        directMessage.Content = syncMessage.OriginalContent;
+                        directMessage.IsEdited = syncMessage.IsEdited;
+                        directMessage.EditedTimestamp = syncMessage.EditedTimestamp;
+                        await _dbContext.SaveChangesAsync();
+                        Console.WriteLine($"Сообщение {messageId} обновлено напрямую");
                     }
                 }
 
