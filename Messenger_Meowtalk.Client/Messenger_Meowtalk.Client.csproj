@@ -16,4 +16,26 @@
 		<ProjectReference Include="..\Messenger_Meowtalk.Shared\Messenger_Meowtalk.Shared.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="Assets\Sounds\notification.wav">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Assets\Stickers\default_cats\cat_hello.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Assets\Stickers\default_cats\cat_laugh.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Assets\Stickers\default_cats\cat_love.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="Assets\Stickers\default_cats\cat_sad.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Assets\Stickers\default_cats\" />
+	</ItemGroup>
+
 </Project>

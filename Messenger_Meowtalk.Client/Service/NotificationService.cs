@@ -13,7 +13,6 @@ namespace Messenger_Meowtalk.Client.Services
 
         public NotificationService()
         {
-            // Больше не нужен SoundPlayer в конструкторе
         }
 
         public void SetWindowFocusState(bool isFocused)
@@ -23,7 +22,7 @@ namespace Messenger_Meowtalk.Client.Services
 
         public void ShowMessageNotification(string sender, string message, string chatName = null)
         {
-            // Показываем уведомление только если окно не в фокусе или свернуто
+            //Показываем уведомление только если окно не в фокусе или свернуто
             if (_isWindowFocused && Application.Current.MainWindow?.WindowState != WindowState.Minimized)
                 return;
 
@@ -37,7 +36,7 @@ namespace Messenger_Meowtalk.Client.Services
 
         private void ShowCustomNotification(string sender, string message, string chatName)
         {
-            // Закрываем предыдущее уведомление если есть
+            //Закрываем предыдущее уведомление если есть
             _notificationWindow?.Close();
 
             _notificationWindow = new Window
@@ -96,7 +95,7 @@ namespace Messenger_Meowtalk.Client.Services
             border.Child = stackPanel;
             _notificationWindow.Content = border;
 
-            // Анимация появления
+            //Анимация появления
             _notificationWindow.Opacity = 0;
             _notificationWindow.Show();
 
@@ -104,7 +103,7 @@ namespace Messenger_Meowtalk.Client.Services
                 TimeSpan.FromSeconds(0.3));
             _notificationWindow.BeginAnimation(Window.OpacityProperty, fadeIn);
 
-            // Автоматическое закрытие через 4 секунды
+            //Автоматическое закрытие через 4 секунды
             var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
             timer.Tick += (s, e) =>
             {
@@ -113,11 +112,11 @@ namespace Messenger_Meowtalk.Client.Services
             };
             timer.Start();
 
-            // Закрытие по клику
+            //Закрытие по клику
             _notificationWindow.MouseDown += (s, e) =>
             {
                 CloseNotification();
-                // Активируем главное окно при клике на уведомление
+                //Активируем главное окно при клике на уведомление
                 Application.Current.MainWindow?.Activate();
                 if (Application.Current.MainWindow?.WindowState == WindowState.Minimized)
                 {
@@ -141,18 +140,20 @@ namespace Messenger_Meowtalk.Client.Services
         {
             try
             {
-                // Используем системный звук уведомления
-                SystemSounds.Beep.Play();
-
-                // Или можно использовать другие системные звуки:
-                // SystemSounds.Asterisk.Play();
-                // SystemSounds.Exclamation.Play();
-                // SystemSounds.Hand.Play();
-                // SystemSounds.Question.Play();
+                using (var soundPlayer = new SoundPlayer("Assets/Sounds/notification.wav"))
+                {
+                    soundPlayer.Play();
+                }
             }
             catch
             {
-                // Игнорируем ошибки воспроизведения
+                try
+                {
+                    SystemSounds.Beep.Play();
+                }
+                catch
+                {
+                }
             }
         }
 

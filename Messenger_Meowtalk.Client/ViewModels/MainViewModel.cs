@@ -19,6 +19,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
         private bool _isEmojiPanelOpen;
         private readonly ChatService _chatService;
         private readonly NotificationService _notificationService;
+        private readonly StickerService _stickerService;
 
         public User CurrentUser { get; }
         public ObservableCollection<Chat> Chats { get; }
@@ -82,6 +83,14 @@ namespace Messenger_Meowtalk.Client.ViewModels
             _notificationService = new NotificationService();
             ConnectionStatus = "Подключение...";
 
+            _stickerService = new StickerService();
+
+            // ЗАМЕНИ ЭТОТ БЛОК - используй GraphicStickers из StickerService
+            foreach (var sticker in _stickerService.GraphicStickers)
+            {
+                Stickers.Add(sticker);
+            }
+
             _chatService.MessageReceived += OnMessageReceivedFromService;
             _chatService.ConnectionStatusChanged += OnConnectionStatusChangedFromService;
 
@@ -95,7 +104,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
             _ = InitializeConnectionAsync();
             InitializeTestChats();
             InitializeEmojis();
-            InitializeStickers();
+            //InitializeStickers();
         }
 
         private async Task InitializeConnectionAsync()
@@ -273,7 +282,16 @@ namespace Messenger_Meowtalk.Client.ViewModels
 
             if (emoji.IsSticker)
             {
-                _ = SendStickerAsync(emoji.Code);
+                if (!string.IsNullOrEmpty(emoji.ImagePath))
+                {
+                    // Это графический стикер - отправляем специальным сообщением
+                    _ = SendGraphicStickerAsync(emoji);
+                }
+                else
+                {
+                    // Это старый текстовый стикер (можно удалить после перехода)
+                    _ = SendStickerAsync(emoji.Code);
+                }
             }
             else
             {
@@ -291,6 +309,14 @@ namespace Messenger_Meowtalk.Client.ViewModels
             }
 
             IsEmojiPanelOpen = false;
+        }
+        private async Task SendGraphicStickerAsync(EmojiItem sticker)
+        {
+            if (SelectedChat == null) return;
+
+            // Отправляем специальное сообщение для графического стикера
+            await _chatService.SendMessageAsync($"[STICKER_IMG]{sticker.ImagePath}", SelectedChat.ChatId);
+            MessageTextBox_Focus();
         }
 
         private async Task SendStickerAsync(string stickerCode)
@@ -313,20 +339,20 @@ namespace Messenger_Meowtalk.Client.ViewModels
             }
         }
 
-        private void InitializeStickers()
-        {
-            var stickers = new[]
-            {
-                "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "╰(▔∀▔)╯", "(～￣▽￣)～", "ヽ(•‿•)ノ",
-                "(´･ω･`)", "( ° ʖ °)", "¯\\_(ツ)_/¯", "(>^_^)>",
-                "<(^_^<)", "(¬‿¬)", "(づ￣ ³￣)づ", "ヾ(⌐■_■)ノ♪"
-            };
+        //private void InitializeStickers()
+        //{
+        //    var stickers = new[]
+        //    {
+        //        "(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧", "╰(▔∀▔)╯", "(～￣▽￣)～", "ヽ(•‿•)ノ",
+        //        "(´･ω･`)", "( ° ʖ °)", "¯\\_(ツ)_/¯", "(>^_^)>",
+        //        "<(^_^<)", "(¬‿¬)", "(づ￣ ³￣)づ", "ヾ(⌐■_■)ノ♪"
+        //    };
 
-            foreach (var sticker in stickers)
-            {
-                Stickers.Add(new EmojiItem { Code = sticker, Description = "Стикер", IsSticker = true });
-            }
-        }
+        //    foreach (var sticker in stickers)
+        //    {
+        //        Stickers.Add(new EmojiItem { Code = sticker, Description = "Стикер", IsSticker = true });
+        //    }
+        //}
 
         private async void StartNewChat()
         {
