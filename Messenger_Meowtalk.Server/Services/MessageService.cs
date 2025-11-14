@@ -23,6 +23,12 @@ namespace Messenger_Meowtalk.Server.Services
 
             try
             {
+                // Убедимся, что у сообщения есть ID
+                if (string.IsNullOrEmpty(message.Id))
+                {
+                    message.Id = Guid.NewGuid().ToString();
+                }
+
                 var chat = await _context.Chats.FirstOrDefaultAsync(c => c.ChatId == message.ChatId);
 
                 if (chat == null)
@@ -111,6 +117,8 @@ namespace Messenger_Meowtalk.Server.Services
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"Ошибка сохранения сообщения: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -200,8 +208,7 @@ namespace Messenger_Meowtalk.Server.Services
 
         private bool IsStickerMessage(EncryptedMessage encryptedMessage)
         {
-            return encryptedMessage.EncryptionKey == "sticker" ||
-                   Encoding.UTF8.GetString(encryptedMessage.IV) == "sticker_no_encryption";
+            return encryptedMessage.EncryptionKey == "sticker";
         }
     }
 }
