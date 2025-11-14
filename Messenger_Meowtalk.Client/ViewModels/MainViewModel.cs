@@ -71,8 +71,7 @@ namespace Messenger_Meowtalk.Client.ViewModels
         public ICommand DisconnectCommand { get; }
         public ICommand ToggleEmojiPanelCommand { get; }
         public ICommand InsertEmojiCommand { get; }
-        public ICommand EditMessageCommand { get; }
-        public ICommand DeleteMessageCommand { get; }
+
         public MainViewModel(User currentUser)
         {
             CurrentUser = currentUser;
@@ -89,99 +88,13 @@ namespace Messenger_Meowtalk.Client.ViewModels
             DisconnectCommand = new RelayCommand(async () => await DisconnectAsync());
             ToggleEmojiPanelCommand = new RelayCommand(ToggleEmojiPanel);
             InsertEmojiCommand = new RelayCommand<EmojiItem>(InsertEmoji);
-            EditMessageCommand = new RelayCommand<Message>(EditMessage, CanEditMessage);
-            DeleteMessageCommand = new RelayCommand<Message>(DeleteMessage, CanDeleteMessage);
 
             _ = InitializeConnectionAsync();
             InitializeTestChats();
             InitializeEmojis();
             InitializeStickers();
         }
-        private bool CanEditMessage(Message message)
-        {
-            return message != null &&
-                   message.IsMyMessage &&
-                   !message.IsDeleted &&
-                   message.Type == Message.MessageType.Text;
-        }
 
-        private bool CanDeleteMessage(Message message)
-        {
-            return message != null &&
-                   message.IsMyMessage &&
-                   !message.IsDeleted;
-        }
-
-        private async void EditMessage(Message message)
-        {
-            if (message == null) return;
-
-            var editWindow = new EditMessageWindow(message.Content);
-            if (editWindow.ShowDialog() == true)
-            {
-                var newContent = editWindow.EditedText;
-                if (!string.IsNullOrWhiteSpace(newContent) && newContent != message.Content)
-                {
-                    // Сохраняем оригинальный контент если это первое редактирование
-                    if (!message.IsEdited)
-                    {
-                        message.OriginalContent = message.Content;
-                    }
-
-                    message.Content = newContent.Trim();
-                    message.IsEdited = true;
-                    message.EditedAt = DateTime.Now;
-
-                    // Отправляем сообщение об редактировании на сервер
-                    var editMessage = new Message
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        Sender = CurrentUser.Username,
-                        Content = $"EDIT:{message.Id}:{newContent}",
-                        ChatId = message.ChatId,
-                        Type = Message.MessageType.Edit,
-                        Timestamp = DateTime.Now
-                    };
-
-                    await _chatService.SendMessageAsync(editMessage);
-
-                    // Обновляем отображение
-                    OnPropertyChanged(nameof(SelectedChat));
-                }
-            }
-        }
-
-        private async void DeleteMessage(Message message)
-        {
-            if (message == null) return;
-
-            var result = MessageBox.Show("Вы уверены, что хотите удалить это сообщение?",
-                                        "Удаление сообщения",
-                                        MessageBoxButton.YesNo,
-                                        MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                message.IsDeleted = true;
-                message.Content = "Сообщение удалено";
-
-                // Отправляем сообщение об удалении на сервер
-                var deleteMessage = new Message
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Sender = CurrentUser.Username,
-                    Content = $"DELETE:{message.Id}",
-                    ChatId = message.ChatId,
-                    Type = Message.MessageType.Delete,
-                    Timestamp = DateTime.Now
-                };
-
-                await _chatService.SendMessageAsync(deleteMessage);
-
-                // Обновляем отображение
-                OnPropertyChanged(nameof(SelectedChat));
-            }
-        }
         private async Task InitializeConnectionAsync()
         {
             await _chatService.ConnectAsync(CurrentUser.Username);

@@ -1,10 +1,8 @@
-﻿using Messenger_Meowtalk.Shared.Models;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
+using Messenger_Meowtalk.Shared.Models;
 
 namespace Messenger_Meowtalk.Client.Services
 {
@@ -39,99 +37,11 @@ namespace Messenger_Meowtalk.Client.Services
 
         private void OnMessageReceived(Message message)
         {
-            // Обрабатываем сообщения редактирования
-            if (message.Type == Message.MessageType.Edit && message.Content.StartsWith("EDIT:"))
-            {
-                HandleEditMessage(message);
-                return;
-            }
-
-            // Обрабатываем сообщения удаления
-            if (message.Type == Message.MessageType.Delete && message.Content.StartsWith("DELETE:"))
-            {
-                HandleDeleteMessage(message);
-                return;
-            }
-
-            // Стандартная обработка сообщений
             var chat = FindOrCreateChat(message.ChatId, message.Sender);
             message.IsMyMessage = message.Sender == _currentUser.Username;
-
-            // Добавляем в историю чата
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                chat.Messages.Add(message);
-                chat.RefreshLastMessageProperties();
-            });
-
             MessageReceived?.Invoke(message);
         }
-        private void HandleEditMessage(Message editMessage)
-        {
-            try
-            {
-                var parts = editMessage.Content.Split(':');
-                if (parts.Length >= 3)
-                {
-                    var messageId = parts[1];
-                    var newContent = string.Join(":", parts, 2, parts.Length - 2);
 
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (var chat in Chats)
-                        {
-                            var messageToEdit = chat.Messages.FirstOrDefault(m => m.Id == messageId);
-                            if (messageToEdit != null)
-                            {
-                                if (!messageToEdit.IsEdited)
-                                {
-                                    messageToEdit.OriginalContent = messageToEdit.Content;
-                                }
-
-                                messageToEdit.Content = newContent;
-                                messageToEdit.IsEdited = true;
-                                messageToEdit.EditedAt = DateTime.Now;
-                                break;
-                            }
-                        }
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Ошибка обработки редактирования: {ex.Message}");
-            }
-        }
-
-        private void HandleDeleteMessage(Message deleteMessage)
-        {
-            try
-            {
-                var parts = deleteMessage.Content.Split(':');
-                if (parts.Length >= 2)
-                {
-                    var messageId = parts[1];
-
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        foreach (var chat in Chats)
-                        {
-                            var messageToDelete = chat.Messages.FirstOrDefault(m => m.Id == messageId);
-                            if (messageToDelete != null)
-                            {
-                                messageToDelete.IsDeleted = true;
-                                messageToDelete.Content = "Сообщение удалено";
-                                break;
-                            }
-                        }
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Ошибка обработки удаления: {ex.Message}");
-            }
-        }
         private Chat FindOrCreateChat(string chatId, string senderName)
         {
             var chat = Chats.FirstOrDefault(c => c.ChatId == chatId);
