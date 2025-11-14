@@ -63,8 +63,12 @@ namespace Messenger_Meowtalk.Client
             if (e.Key == Key.Enter && _viewModel.SendMessageCommand?.CanExecute(null) == true)
             {
                 _viewModel.SendMessageCommand.Execute(null);
-                e.Handled = true;
+                e.Handled = true; // Это предотвращает звуковой сигнал системы
                 ScrollToBottom();
+
+                // Убедимся, что фокус остается в TextBox
+                MessageTextBox.Focus();
+                MessageTextBox.CaretIndex = MessageTextBox.Text.Length;
             }
         }
 
@@ -127,6 +131,12 @@ namespace Messenger_Meowtalk.Client
         public void FocusMessageTextBox()
         {
             MessageTextBox?.Focus();
-        }      
+
+            // Устанавливаем курсор в конец текста
+            if (MessageTextBox != null)
+            {
+                MessageTextBox.CaretIndex = MessageTextBox.Text.Length;
+            }
+        }
     }
 }

@@ -245,6 +245,12 @@ namespace Messenger_Meowtalk.Client.ViewModels
             var messageContent = MessageText.Trim();
             MessageText = string.Empty;
             await _chatService.SendMessageAsync(messageContent, SelectedChat.ChatId);
+
+            // Фокусируемся обратно на поле ввода
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                MessageTextBox_Focus();
+            }));
         }
 
         private void ToggleEmojiPanel()
