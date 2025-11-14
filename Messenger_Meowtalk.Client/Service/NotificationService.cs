@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Messenger_Meowtalk.Shared.Models;
+using System;
 using System.Media;
 using System.Windows;
-using System.Windows.Threading;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace Messenger_Meowtalk.Client.Services
 {
@@ -20,15 +21,23 @@ namespace Messenger_Meowtalk.Client.Services
             _isWindowFocused = isFocused;
         }
 
-        public void ShowMessageNotification(string sender, string message, string chatName = null)
+        public void ShowMessageNotification(string sender, string message, string chatName = null, Message.MessageType messageType = Message.MessageType.Text)
         {
-            //Показываем уведомление только если окно не в фокусе или свернуто
             if (_isWindowFocused && Application.Current.MainWindow?.WindowState != WindowState.Minimized)
                 return;
 
+            // РАЗНЫЕ ТЕКСТЫ ДЛЯ РАЗНЫХ ТИПОВ СООБЩЕНИЙ
+            var notificationMessage = messageType switch
+            {
+                Message.MessageType.Sticker => "📎 Стикер",
+                Message.MessageType.Image => "🖼️ Изображение",
+                Message.MessageType.File => "📎 Файл",
+                _ => message.Length > 50 ? message.Substring(0, 50) + "..." : message
+            };
+
             Application.Current.Dispatcher.Invoke(() =>
             {
-                ShowCustomNotification(sender, message, chatName);
+                ShowCustomNotification(sender, notificationMessage, chatName);
             });
 
             PlayNotificationSound();

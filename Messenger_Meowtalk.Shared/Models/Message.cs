@@ -31,7 +31,9 @@ namespace Messenger_Meowtalk.Shared.Models
         {
             Text,
             System,
-            Sticker
+            Sticker,
+            Image,
+            File
         }
     }
 }
